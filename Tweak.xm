@@ -43,9 +43,7 @@ static SB3DTMLongPressGestureDelegate *delegate = nil;
 static NSDictionary *hapticInfo = nil;
 
 
-void hapticFeedback() {
-	AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
-}
+#define hapticFeedback()	AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo)
 
 
 %hook SBIconView 
