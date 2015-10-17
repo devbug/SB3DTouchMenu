@@ -115,8 +115,6 @@ static NSDictionary *hapticInfo = nil;
 
 
 %ctor {
-	class_addProtocol(%c(SBIconView), @protocol(UIGestureRecognizerDelegate));
-	
 	hapticInfo = [@{ @"VibePattern" : @[ @(YES), @(50) ], @"Intensity" : @(1) } retain];
 	delegate = [[SB3DTMLongPressGestureDelegate alloc] init];
 	
