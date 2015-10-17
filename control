@@ -1,0 +1,9 @@
+Package: me.devbug.sb3dtouchmenu
+Name: SB3DTouchMenu
+Depends: mobilesubstrate, firmware (>= 9.0)
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: An awesome MobileSubstrate tweak!
+Maintainer: deVbug <devbug@devbug.me>
+Author: deVbug <devbug@devbug.me>
+Section: Tweaks
