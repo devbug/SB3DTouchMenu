@@ -8,6 +8,8 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 @interface SBIconView : UIView
 @property(retain, nonatomic) UILongPressGestureRecognizer *shortcutMenuPeekGesture;
 - (void)cancelLongPressTimer;
+- (void)setHighlighted:(BOOL)arg1;
+- (BOOL)isHighlighted;
 @end
 
 @interface SBApplicationShortcutMenu : NSObject @end
@@ -57,22 +59,29 @@ static NSDictionary *hapticInfo = nil;
 	
 }
 
-- (void)_handleFirstHalfLongPressTimer:(id)timer {
-	SBIconController *iconC = [%c(SBIconController) sharedInstance];
+- (BOOL)_delegateTapAllowed {
+	if ([[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil && !self.isHighlighted)
+		return NO;
 	
-	if ([iconC _canRevealShortcutMenu]) {
+	return %orig;
+}
+
+- (void)_handleFirstHalfLongPressTimer:(id)timer {
+	if ([[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
 		// TODO: icon visual feedback
 		hapticFeedback();
-	}
-	else if (iconC.presentedShortcutMenu != nil) {
-		[self cancelLongPressTimer];
-		return;
 	}
 	
 	%orig;
 }
 
 - (void)_handleSecondHalfLongPressTimer:(id)timer {
+	if ([[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil) {
+		[self cancelLongPressTimer];
+		[self setHighlighted:NO];
+		return;
+	}
+	
 	// TODO: icon visual feedback
 	%orig;
 }
@@ -88,6 +97,13 @@ static NSDictionary *hapticInfo = nil;
 		;// TODO: icon visual feedback
 	
 	%orig;
+}
+
+- (BOOL)iconShouldAllowTap:(SBIconView *)iconView {
+	if (self.presentedShortcutMenu != nil && !iconView.isHighlighted)
+		return NO;
+	
+	return %orig;
 }
 
 - (void)_revealMenuForIconView:(SBIconView *)iconView presentImmediately:(BOOL)imm {
