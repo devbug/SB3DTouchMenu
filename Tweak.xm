@@ -34,7 +34,7 @@ void hapticFeedback() {
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
-	if ([gestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]] && [[%c(SBIconController) sharedInstance] isEditing])
+	if ([gestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]] && ![[%c(SBIconController) sharedInstance] _canRevealShortcutMenu])
 		return NO;
 	
 	return YES;
@@ -50,8 +50,6 @@ void hapticFeedback() {
 		menuGestureCanceller.allowableMovement = 1.0f;
 		%orig(menuGestureCanceller);
 		
-		[toAddGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
-		[toAddGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
 		[toAddGesture setRequiredPreviewForceState:0];
 		[toAddGesture requireGestureRecognizerToFail:menuGestureCanceller];
 		toAddGesture.delegate = (id <UIGestureRecognizerDelegate>)self;
@@ -67,15 +65,8 @@ void hapticFeedback() {
 	
 }
 
-%new
-- (void)__sb3dtm_handleForceTouchGesture:(UILongPressGestureRecognizer *)gesture {
-	if (gesture.state != UIGestureRecognizerStateCancelled && gesture.state != UIGestureRecognizerStateFailed) {
-		[[%c(SBIconController) sharedInstance] _handleShortcutMenuPeek:gesture];
-	}
-}
-
 - (void)_handleFirstHalfLongPressTimer:(id)timer {
-	if (![[%c(SBIconController) sharedInstance] isEditing]) {
+	if ([[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
 		hapticFeedback();
 	}
 	
@@ -95,4 +86,11 @@ void hapticFeedback() {
 }
 
 %end
+
+
+%ctor {
+	class_addProtocol(%c(SBIconView), @protocol(UIGestureRecognizerDelegate));
+	
+	%init;
+}
 
