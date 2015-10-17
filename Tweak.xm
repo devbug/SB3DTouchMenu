@@ -25,21 +25,6 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 @end
 
 
-@interface SB3DTMLongPressGestureDelegate : NSObject <UIGestureRecognizerDelegate> @end
-
-@implementation SB3DTMLongPressGestureDelegate
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
-	if ([gestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]] && ![[%c(SBIconController) sharedInstance] _canRevealShortcutMenu])
-		return NO;
-	
-	return YES;
-}
-
-@end
-
-
-static SB3DTMLongPressGestureDelegate *delegate = nil;
 static NSDictionary *hapticInfo = nil;
 
 
@@ -52,7 +37,6 @@ static NSDictionary *hapticInfo = nil;
 	if (toAddGesture != nil && toAddGesture == self.shortcutMenuPeekGesture) {
 		UILongPressGestureRecognizer *menuGestureCanceller = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(__sb3dtm_handleLongPressGesture:)];
 		menuGestureCanceller.minimumPressDuration = 1.0f;
-		menuGestureCanceller.delegate = delegate;
 		menuGestureCanceller.delaysTouchesEnded = NO;
 		menuGestureCanceller.cancelsTouchesInView = NO;
 		menuGestureCanceller.allowableMovement = 1.0f;
@@ -61,7 +45,6 @@ static NSDictionary *hapticInfo = nil;
 		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
 		[toAddGesture setRequiredPreviewForceState:0];
 		[toAddGesture requireGestureRecognizerToFail:menuGestureCanceller];
-		toAddGesture.delegate = delegate;
 		
 		[menuGestureCanceller release];
 	}
@@ -116,7 +99,6 @@ static NSDictionary *hapticInfo = nil;
 
 %ctor {
 	hapticInfo = [@{ @"VibePattern" : @[ @(YES), @(50) ], @"Intensity" : @(1) } retain];
-	delegate = [[SB3DTMLongPressGestureDelegate alloc] init];
 	
 	%init;
 }
