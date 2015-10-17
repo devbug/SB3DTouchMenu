@@ -16,10 +16,7 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 - (BOOL)isEditing;
 @end
 
-@interface _UILinearForceLevelClassifier : NSObject @end
-
 @interface UIGestureRecognizer (Firmware90_Private)
-- (void)_setForceLevelClassifier:(id)arg1;
 - (void)setRequiredPreviewForceState:(int)arg1;
 @end
 
@@ -53,25 +50,13 @@ void hapticFeedback() {
 		menuGestureCanceller.allowableMovement = 1.0f;
 		%orig(menuGestureCanceller);
 		
-		[self removeGestureRecognizer:self.shortcutMenuPeekGesture];
-		[self.shortcutMenuPeekGesture release];
-		
-		_UILinearForceLevelClassifier *classifier = [[%c(_UILinearForceLevelClassifier) alloc] init];
-		
-		UILongPressGestureRecognizer *&shortcutMenuPeekGesture = MSHookIvar<UILongPressGestureRecognizer *>(self, "_shortcutMenuPeekGesture");
-		shortcutMenuPeekGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
-		shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
-		[shortcutMenuPeekGesture _setForceLevelClassifier:classifier];
-		[shortcutMenuPeekGesture setRequiredPreviewForceState:0];			// default == 1
-		shortcutMenuPeekGesture.cancelsTouchesInView = NO;
-		[shortcutMenuPeekGesture requireGestureRecognizerToFail:menuGestureCanceller];
-		shortcutMenuPeekGesture.delegate = (id <UIGestureRecognizerDelegate>)self;
-		%orig(shortcutMenuPeekGesture);
+		[toAddGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
+		[toAddGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
+		[toAddGesture setRequiredPreviewForceState:0];
+		[toAddGesture requireGestureRecognizerToFail:menuGestureCanceller];
+		toAddGesture.delegate = (id <UIGestureRecognizerDelegate>)self;
 		
 		[menuGestureCanceller release];
-		[classifier release];
-		
-		return;
 	}
 	
 	%orig;
