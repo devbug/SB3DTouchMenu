@@ -21,18 +21,10 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 @end
 
 
+@interface SB3DTMLongPressGestureDelegate : NSObject <UIGestureRecognizerDelegate> @end
 
-void hapticFeedback() {
-	@autoreleasepool {
-		NSDictionary *dict = @{ @"VibePattern" : @[ @(YES), @(50) ], @"Intensity" : @(1) };
-		AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, dict);
-	}
-}
+@implementation SB3DTMLongPressGestureDelegate
 
-
-%hook SBIconView 
-
-%new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
 	if ([gestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]] && ![[%c(SBIconController) sharedInstance] _canRevealShortcutMenu])
 		return NO;
@@ -40,11 +32,25 @@ void hapticFeedback() {
 	return YES;
 }
 
+@end
+
+
+static SB3DTMLongPressGestureDelegate *delegate = nil;
+static NSDictionary *hapticInfo = nil;
+
+
+void hapticFeedback() {
+	AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
+}
+
+
+%hook SBIconView 
+
 - (void)addGestureRecognizer:(UIGestureRecognizer *)toAddGesture {
 	if (toAddGesture != nil && toAddGesture == self.shortcutMenuPeekGesture) {
 		UILongPressGestureRecognizer *menuGestureCanceller = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(__sb3dtm_handleLongPressGesture:)];
 		menuGestureCanceller.minimumPressDuration = 1.0f;
-		menuGestureCanceller.delegate = (id <UIGestureRecognizerDelegate>)self;
+		menuGestureCanceller.delegate = delegate;
 		menuGestureCanceller.delaysTouchesEnded = NO;
 		menuGestureCanceller.cancelsTouchesInView = NO;
 		menuGestureCanceller.allowableMovement = 1.0f;
@@ -52,7 +58,7 @@ void hapticFeedback() {
 		
 		[toAddGesture setRequiredPreviewForceState:0];
 		[toAddGesture requireGestureRecognizerToFail:menuGestureCanceller];
-		toAddGesture.delegate = (id <UIGestureRecognizerDelegate>)self;
+		toAddGesture.delegate = delegate;
 		
 		[menuGestureCanceller release];
 	}
@@ -90,6 +96,9 @@ void hapticFeedback() {
 
 %ctor {
 	class_addProtocol(%c(SBIconView), @protocol(UIGestureRecognizerDelegate));
+	
+	hapticInfo = [@{ @"VibePattern" : @[ @(YES), @(50) ], @"Intensity" : @(1) } retain];
+	delegate = [[SB3DTMLongPressGestureDelegate alloc] init];
 	
 	%init;
 }
