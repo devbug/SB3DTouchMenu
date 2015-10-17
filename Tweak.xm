@@ -7,10 +7,14 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 
 @interface SBIconView : UIView
 @property(retain, nonatomic) UILongPressGestureRecognizer *shortcutMenuPeekGesture;
+- (void)cancelLongPressTimer;
 @end
+
+@interface SBApplicationShortcutMenu : NSObject @end
 
 @interface SBIconController
 + (id)sharedInstance;
+@property(retain, nonatomic) SBApplicationShortcutMenu *presentedShortcutMenu;
 - (void)_handleShortcutMenuPeek:(id)arg1;
 - (BOOL)_canRevealShortcutMenu;
 - (BOOL)isEditing;
@@ -56,6 +60,7 @@ void hapticFeedback() {
 		menuGestureCanceller.allowableMovement = 1.0f;
 		%orig(menuGestureCanceller);
 		
+		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
 		[toAddGesture setRequiredPreviewForceState:0];
 		[toAddGesture requireGestureRecognizerToFail:menuGestureCanceller];
 		toAddGesture.delegate = delegate;
@@ -72,8 +77,14 @@ void hapticFeedback() {
 }
 
 - (void)_handleFirstHalfLongPressTimer:(id)timer {
-	if ([[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
+	SBIconController *iconC = [%c(SBIconController) sharedInstance];
+	
+	if ([iconC _canRevealShortcutMenu]) {
 		hapticFeedback();
+	}
+	else if (iconC.presentedShortcutMenu != nil) {
+		[self cancelLongPressTimer];
+		return;
 	}
 	
 	%orig;
