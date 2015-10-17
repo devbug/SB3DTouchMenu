@@ -80,6 +80,7 @@ void hapticFeedback() {
 	SBIconController *iconC = [%c(SBIconController) sharedInstance];
 	
 	if ([iconC _canRevealShortcutMenu]) {
+		// TODO: icon visual feedback
 		hapticFeedback();
 	}
 	else if (iconC.presentedShortcutMenu != nil) {
@@ -91,12 +92,22 @@ void hapticFeedback() {
 }
 
 - (void)_handleSecondHalfLongPressTimer:(id)timer {
+	// TODO: icon visual feedback
 	%orig;
 }
 
 %end
 
 %hook SBIconController
+
+- (void)_handleShortcutMenuPeek:(UILongPressGestureRecognizer *)gesture {
+	if (gesture.state == UIGestureRecognizerStateCancelled 
+			|| gesture.state == UIGestureRecognizerStateFailed 
+			|| gesture.state == UIGestureRecognizerStateRecognized)
+		;// TODO: icon visual feedback
+	
+	%orig;
+}
 
 - (void)_revealMenuForIconView:(SBIconView *)iconView presentImmediately:(BOOL)imm {
 	%orig(iconView, YES);
