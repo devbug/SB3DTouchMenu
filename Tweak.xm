@@ -181,50 +181,12 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	return TRUE;
 }
 
-%hook SBSwitcherForcePressSystemGestureRecognizer
 
-- (BOOL)_shouldTryToBeginWithEvent:(UIEvent * /*UITouchesEvent **/)event {
-	// 무조건 yes는 감도에 영향을 줌. 이 제스처의 모든 유효 터치에 대해 begin을 가능하게 해줌.
-	//return YES;
-	return %orig;
-}
-
-%end
-
-@interface _UISettings : NSObject @end
-@interface _UIScreenEdgePanRecognizerDwellSettings : _UISettings
-@property (nonatomic) CFTimeInterval longPressRequiredDuration;
-@end
-@interface _UIScreenEdgePanRecognizerSettings : _UISettings
-- (void)setDefaultValues;
-- (_UIScreenEdgePanRecognizerDwellSettings *)dwellSettings;
-@end
-@interface _UIScreenEdgePanRecognizer : NSObject
-@property (nonatomic, readonly) struct CGPoint _lastTouchLocation;
-- (id)delegate;
-@property (nonatomic, retain) _UIScreenEdgePanRecognizerSettings *settings;
-@property (nonatomic, readonly) int state;
-- (void)_setState:(int)arg1;
-- (void)_incorporateIncrementalSampleAtLocation:(struct CGPoint)arg1 timestamp:(CFTimeInterval)arg2 modifier:(int)arg3 interfaceOrientation:(UIInterfaceOrientation)arg4 forceState:(int)arg5;
-- (void)_incorporateInitialTouchAtLocation:(struct CGPoint)arg1 timestamp:(CFTimeInterval)arg2 modifier:(int)arg3 interfaceOrientation:(UIInterfaceOrientation)arg4 forceState:(int)arg5;
-- (void)incorporateTouchSampleAtLocation:(struct CGPoint)arg1 timestamp:(CFTimeInterval)arg2 modifier:(int)arg3 interfaceOrientation:(UIInterfaceOrientation)arg4 forceState:(int)arg5;
-- (int)_type;
-- (BOOL)isRequiringLongPress;
-- (void)setRequiresFlatThumb:(BOOL)arg1;
-- (void)setShouldUseGrapeFlags:(BOOL)arg1;
-@end
 @interface UIScreenEdgePanGestureRecognizer (Private)
-- (BOOL)_shouldTryToBeginWithEvent:(id)arg1;
 - (CGFloat)_edgeRegionSize;
 - (CGPoint)_locationForTouch:(id)arg1;
-- (void)_setEdgeRegionSize:(CGFloat)arg1;
 - (void)_setHysteresis:(CGFloat)arg1;
-- (BOOL)_shouldTryToBeginWithEvent:(id)arg1;
-- (BOOL)_shouldUseGrapeFlags;
 - (UIInterfaceOrientation)_touchInterfaceOrientation;
-- (id)initWithTarget:(id)arg1 action:(SEL)arg2 type:(int)arg3;
-- (BOOL)isRequiringLongPress;
-- (void)screenEdgePanRecognizerStateDidChange:(id)arg1;
 @end
 @interface SBSwitcherForcePressSystemGestureRecognizer : UIScreenEdgePanGestureRecognizer @end
 @interface SBSystemGestureManager : NSObject
@@ -244,43 +206,10 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 - (void)handleSwitcherForcePressGesture:(id)arg1;
 @end
 
-@interface FBSDisplay : NSObject @end
-@interface SBWorkspace : NSObject
-+ (id)mainWorkspace;
-//@property(readonly, retain, nonatomic) FBWorkspaceEventQueue *eventQueue;
-@property(readonly, retain, nonatomic) FBSDisplay *display;
-@end
-@interface SBWorkspaceTransitionRequest : NSObject
-@property(copy, nonatomic) NSString *eventLabel;
-//@property(retain, nonatomic) SBAlertManager *alertManager;
-@end
-@interface SBMainWorkspaceTransitionRequest : SBWorkspaceTransitionRequest
-- (id)initWithDisplay:(id)arg1;
-- (id)initWithWorkspace:(SBWorkspace *)arg1 display:(FBSDisplay *)arg2;	// crash
-@end
-@interface SBMainSwitcherViewController : NSObject
-+ (id)sharedInstance;
-- (void)startTransitionPresenting:(BOOL)arg1 withRequest:(id)arg2;
-@end
-@interface FBRootWindow : UIWindow @end
-@interface FBSceneManager : NSObject
-+ (id)sharedInstance;
-- (FBRootWindow *)_rootWindowForDisplay:(FBSDisplay *)arg1 createIfNecessary:(BOOL)arg2;
-@end
-
 @interface UIGestureRecognizerTarget : NSObject {
 	SEL _action;
 	id _target;
 }
-@end
-
-@interface UILongPressGestureRecognizer (Private)
-@property (setter=_setButtonType:, nonatomic) int _buttonType;
-- (void)_resetGestureRecognizer;
-- (void)touchesBegan:(id)arg1 withEvent:(id)arg2;
-- (void)touchesCancelled:(id)arg1 withEvent:(id)arg2;
-- (void)touchesEnded:(id)arg1 withEvent:(id)arg2;
-- (void)touchesMoved:(id)arg1 withEvent:(id)arg2;
 @end
 
 
@@ -288,8 +217,8 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 @interface SB3DTMSwitcherFakeForcePressGestureRecognizer : UIScreenEdgePanGestureRecognizer
 //@property (nonatomic) NSUInteger numberOfTapsRequired;	// 0
 //@property (nonatomic) NSUInteger numberOfTouchesRequired;	// 1
-@property (nonatomic) CFTimeInterval minimumPressDuration;
-@property (nonatomic) CGFloat allowableMovement;
+@property (nonatomic) CFTimeInterval minimumPressDurationForLongPress;
+@property (nonatomic) CGFloat allowableMovementForLongPress;
 @property (nonatomic, readonly) BOOL isLongPressRecognized;
 @property (nonatomic, readonly) BOOL panning;
 @property (nonatomic, readonly) CGPoint startPoint;
@@ -307,8 +236,8 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	self = [super initWithTarget:target action:action];
 	
 	if (self) {
-		self.minimumPressDuration = 0.5f;
-		self.allowableMovement = 10.0f;
+		self.minimumPressDurationForLongPress = 0.5f;
+		self.allowableMovementForLongPress = 10.0f;
 		_isLongPressRecognized = NO;
 		_panning = NO;
 		_startPoint = CGPointMake(0,0);
@@ -355,7 +284,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		if (_startTime == 0.0f) {
 			_startPoint = [self _locationForTouch:touch];
 			_startTime = [[NSDate date] timeIntervalSince1970];
-			[self performSelector:@selector(longPressTimerElapsed:) withObject:self afterDelay:self.minimumPressDuration];
+			[self performSelector:@selector(longPressTimerElapsed:) withObject:self afterDelay:self.minimumPressDurationForLongPress];
 		}
 		return;
 	}
@@ -397,12 +326,12 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		CGFloat dy = fabs(_startPoint.y - curPoint.y);
 		CGFloat distance = sqrt(dx*dx + dy*dy);
 		
-		if (distance > self.allowableMovement) {
+		if (distance > self.allowableMovementForLongPress) {
 			self.state = UIGestureRecognizerStateFailed;
 			return;
 		}
 		
-		if (self.startTime + self.minimumPressDuration <= [[NSDate date] timeIntervalSince1970]
+		if (self.startTime + self.minimumPressDurationForLongPress <= [[NSDate date] timeIntervalSince1970]
 				&& self.state != UIGestureRecognizerStateCancelled 
 				&& self.state != UIGestureRecognizerStateFailed 
 				&& self.state != UIGestureRecognizerStateRecognized) {
@@ -435,21 +364,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 %hook SBUIController
 
-/*- (void)_addRemoveSwitcherGesture {
-	%orig;
-	
-	SBSwitcherForcePressSystemGestureRecognizer *&g = MSHookIvar<SBSwitcherForcePressSystemGestureRecognizer *>(self, "_switcherForcePressRecognizer");
-	if (g == nil) {
-		g = (SBSwitcherForcePressSystemGestureRecognizer *)[[%c(UIScreenEdgePanGestureRecognizer) alloc] initWithTarget:self action:@selector(_handleSwitcherForcePressGesture:)];
-		g.delegate = (id <UIGestureRecognizerDelegate>)self;
-		g.minimumNumberOfTouches = 1;
-		g.maximumNumberOfTouches = 1;
-		[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:0xD];
-	}
-	
-	[g _setEdgeRegionSize:10.0f];
-}*/
-
 - (void)_addRemoveSwitcherGesture {
 	SBSwitcherForcePressSystemGestureRecognizer *&g = MSHookIvar<SBSwitcherForcePressSystemGestureRecognizer *>(self, "_switcherForcePressRecognizer");
 	if (g) {
@@ -464,7 +378,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	g.maximumNumberOfTouches = 1;
 	[g _setHysteresis:0];
 	g.edges = UIRectEdgeLeft;
-	//[g _setEdgeRegionSize:1.0f];
 	
 	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:0xD];
 }
@@ -472,16 +385,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 %end
 
 %hook SBMainSwitcherGestureCoordinator
-
-// _handleSwitcherForcePressGesture == handleSwitcherForcePressGesture
-//- (void)_handleSwitcherForcePressGesture:(UIGestureRecognizer *)gesture {
-//	if (gesture.state == UIGestureRecognizerStateBegan) {
-//		[self _forcePressGestureBeganWithGesture:gesture];
-//	}
-//
-//	SBSwitcherForcePressSystemGestureTransaction *_switcherForcePressTransaction = MSHookIvar<SBSwitcherForcePressSystemGestureTransaction *>(self, "_switcherForcePressTransaction");
-//	[_switcherForcePressTransaction systemGestureStateChanged:gesture];
-//}
 
 %new
 - (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMSwitcherFakeForcePressGestureRecognizer *)gesture {
@@ -498,46 +401,10 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 %end
 
-/*
-Oct 18 21:24:16 deVbugs-i5 SpringBoard[4670] <Notice>: [SB3DTouchMenu] Tweak.xm:225 DEBUG: -[<SBMainSwitcherViewController: 0x158ad0d0> startTransitionPresenting:1 withRequest:<SBMainWorkspaceTransitionRequest: 0x14607270; eventLabel: ActivateSwitcherForcePress; display: Main; source: Unspecified> {
-	    alertManager = <SBMainAlertManager: 0x14729b20>;
-	    applicationContext = <SBWorkspaceApplicationTransitionContext: 0x146c0c80; animationDisabled: NO; background: NO; waitForScenes: YES> {
-	        layoutState = <SBMainDisplayLayoutState: 0x147acc60; elements: 1> {
-	            orientation = UIInterfaceOrientationPortrait;
-	            breadcrumbState = <SBBreadcrumbState: 0x146ef3b0>;
-	            sideAppState = <SBSideAppState: 0x14693920; identifier: (null); style: Overlay; width: Narrow>;
-	            elements = {
-	                <SBLayoutElement: 0x16a91070; identifier: com.apple.SpringBoard.builtin.PrimarySwitcher; role: primary> {
-	                    supportedRoles = primary;
-	                    attributes = none;
-	                    viewControllerClass = SBMainSwitcherViewController;
-	                };
-	            }
-	        };
-	        previousLayoutState = <SBMainDisplayLayoutState: 0x16b7fba0; elements: 0> {
-	            orientation = UIInterfaceOrientationPortrait;
-	            breadcrumbState = <SBBreadcrumbState: 0x15b427e0>;
-	            sideAppState = <SBSideAppState: 0x15b9e8b0; identifier: (null); style: Overlay; width: Narrow>;
-	        };
-	        layoutDelegate = <SBMainWorkspaceTransitionRequest: 0x14607270>;
-	        entities = {
-	            SBLayoutPrimaryRole = <SBMainWorkspacePrimarySwitcherEntity: 0x1474ca20; ID: com.apple.SpringBoard.builtin.PrimarySwitcher; layoutRole: primary> {
-	                supportedRoles = primary;
-	                layoutAttributes = none;
-	            };
-	            SBLayoutSideRole = <SBWorkspaceDeactivatingEntity: 0x15a4b510; layoutRole: side> {
-	                supportedRoles = none;
-	                layoutAttributes = none;
-	            };
-	        }
-	    };
-	}] 
-*/
-
 
 
 %ctor {
-	hapticInfo = [@{ @"VibePattern" : @[ @(YES), @(50) ], @"Intensity" : @(1) } retain];
+	hapticInfo = [@{ @"VibePattern" : @[ @(YES), @(35) ], @"Intensity" : @(1) } retain];
 	
 	MSHookFunction(_AXSForceTouchEnabled, MSHake(_AXSForceTouchEnabled));
 	
