@@ -1,5 +1,6 @@
 #import <UIKit/UIKit.h>
 #import <AudioToolbox/AudioServices.h>
+#import <UIKit/UIGestureRecognizerSubclass.h>
 
 
 extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystemSoundID, id unknown, NSDictionary *options);
@@ -26,6 +27,55 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 - (void)setRequiredPreviewForceState:(int)arg1;
 @end
 
+@interface UITouch (Private)
+@property (nonatomic, readonly) CGFloat majorRadius;
+@property (nonatomic, readonly) CGFloat majorRadiusTolerance;
+@end
+
+
+@interface SB3DTMPeekDetectorForShortcutMenuGestureRecognizer : UILongPressGestureRecognizer
+@property (nonatomic, readonly) CGFloat startMajorRadius;
+@end
+
+@implementation SB3DTMPeekDetectorForShortcutMenuGestureRecognizer
+
+- (instancetype)initWithTarget:(id)target action:(SEL)action {
+	self = [super initWithTarget:target action:action];
+	
+	if (self) {
+		_startMajorRadius = 0.0f;
+	}
+	
+	return self;
+}
+
+- (void)reset {
+	[super reset];
+	
+	_startMajorRadius = 0.0f;
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+	UITouch *touch = [touches anyObject];
+	
+	_startMajorRadius = touch.majorRadius;
+	
+	[super touchesBegan:touches withEvent:event];
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+	UITouch *touch = [touches anyObject];
+	
+	if (_startMajorRadius < touch.majorRadius) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
+	}
+	
+	[super touchesMoved:touches withEvent:event];
+}
+
+@end
+
 
 static NSDictionary *hapticInfo = nil;
 
@@ -37,11 +87,11 @@ static NSDictionary *hapticInfo = nil;
 
 - (void)addGestureRecognizer:(UIGestureRecognizer *)toAddGesture {
 	if (toAddGesture != nil && toAddGesture == self.shortcutMenuPeekGesture) {
-		UILongPressGestureRecognizer *menuGestureCanceller = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(__sb3dtm_handleLongPressGesture:)];
+		SB3DTMPeekDetectorForShortcutMenuGestureRecognizer *menuGestureCanceller = [[SB3DTMPeekDetectorForShortcutMenuGestureRecognizer alloc] initWithTarget:self action:@selector(__sb3dtm_handleLongPressGesture:)];
 		menuGestureCanceller.minimumPressDuration = 1.0f;
 		menuGestureCanceller.delaysTouchesEnded = NO;
 		menuGestureCanceller.cancelsTouchesInView = NO;
-		menuGestureCanceller.allowableMovement = 1.0f;
+		menuGestureCanceller.allowableMovement = 0.0f;
 		%orig(menuGestureCanceller);
 		
 		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
@@ -55,7 +105,7 @@ static NSDictionary *hapticInfo = nil;
 }
 
 %new
-- (void)__sb3dtm_handleLongPressGesture:(UILongPressGestureRecognizer *)gesture {
+- (void)__sb3dtm_handleLongPressGesture:(SB3DTMPeekDetectorForShortcutMenuGestureRecognizer *)gesture {
 	
 }
 
@@ -233,8 +283,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 - (void)touchesMoved:(id)arg1 withEvent:(id)arg2;
 @end
 
-
-#import <UIKit/UIGestureRecognizerSubclass.h>
 
 // TODO: another directions
 @interface SB3DTMSwitcherFakeForcePressGestureRecognizer : UIScreenEdgePanGestureRecognizer
