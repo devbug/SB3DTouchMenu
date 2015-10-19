@@ -350,14 +350,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	[super touchesMoved:touches withEvent:event];
 }
 
-- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	[super touchesEnded:touches withEvent:event];
-}
-
-- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	[super touchesCancelled:touches withEvent:event];
-}
-
 @end
 
 
