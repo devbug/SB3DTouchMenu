@@ -11,6 +11,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = SB3DTouchMenu
 SB3DTouchMenu_FILES = Tweak.xm
 SB3DTouchMenu_FRAMEWORKS = UIKit AudioToolbox
+SB3DTouchMenu_LIBRARIES = Accessibility MobileGestalt
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
