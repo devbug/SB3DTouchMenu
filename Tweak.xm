@@ -213,7 +213,8 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 @end
 
 
-// TODO: another directions
+// if landscape with iPhone/iPod touch, iOS doesn't deliver message for screen edge.
+// TODO: test on iPad
 @interface SB3DTMSwitcherFakeForcePressGestureRecognizer : UIScreenEdgePanGestureRecognizer
 //@property (nonatomic) NSUInteger numberOfTapsRequired;	// 0
 //@property (nonatomic) NSUInteger numberOfTouchesRequired;	// 1
@@ -273,10 +274,25 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		return;
 	}
 	
-	if ([self _locationForTouch:touch].x > [self _edgeRegionSize]) {
-		self.state = UIGestureRecognizerStateFailed;
-		return;
+	CGSize screenSize = [UIScreen mainScreen].bounds.size;
+	CGPoint location = [self _locationForTouch:touch];
+	
+	BOOL inEdge = NO;
+	if ((self.edges & UIRectEdgeLeft) != 0 && location.x <= [self _edgeRegionSize]) {
+		inEdge = YES;
 	}
+	if ((self.edges & UIRectEdgeRight) != 0 && (screenSize.width - location.x) <= [self _edgeRegionSize]) {
+		inEdge = YES;
+	}
+	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= [self _edgeRegionSize]) {
+		inEdge = YES;
+	}
+	if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]) {
+		inEdge = YES;
+	}
+	
+	if (!inEdge)
+		self.state = UIGestureRecognizerStateFailed;
 	
 	if (self.state == UIGestureRecognizerStateFailed) return;
 	
