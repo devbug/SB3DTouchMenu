@@ -190,6 +190,23 @@ static NSDictionary *hapticInfo = nil;
 %end
 
 
+%hook UIDevice
+
+- (BOOL)_supportsForceTouch {
+	return SHORTCUT_ENABLED ? YES : %orig;
+}
+
+%end
+
+//extern "C" CFBooleanRef MGGetBoolAnswer(CFStringRef);
+//MSHook(CFBooleanRef, MGGetBoolAnswer, CFStringRef key) {
+//	if (CFEqual(key, CFSTR("eQd5mlz0BN0amTp/2ccMoA")))
+//		return SHORTCUT_ENABLED ? kCFBooleanFalse : _MGGetBoolAnswer(key);
+//	
+//	return _MGGetBoolAnswer(key);
+//}
+
+
 // Screen Edge Peek 3D Touch
 
 %hook BSPlatform
@@ -510,6 +527,7 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 	
 	hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(1.0) } retain];
 	
+	//MSHookFunction(MGGetBoolAnswer, MSHake(MGGetBoolAnswer));
 	MSHookFunction(_AXSForceTouchEnabled, MSHake(_AXSForceTouchEnabled));
 	
 	%init;
