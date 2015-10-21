@@ -4,9 +4,12 @@ SDKVERSION = 9.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION = 9.0
 SYSROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS9.0.sdk
 
-PACKAGE_VERSION = 1.1
+PACKAGE_VERSION = 1.2
 
 include $(THEOS)/makefiles/common.mk
+
+SUBPROJECTS += Preferences
+include $(THEOS_MAKE_PATH)/aggregate.mk
 
 TWEAK_NAME = SB3DTouchMenu
 SB3DTouchMenu_FILES = Tweak.xm

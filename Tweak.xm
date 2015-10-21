@@ -33,6 +33,19 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 @end
 
 
+
+NSUserDefaults *userDefaults = nil;
+
+#define SHORTCUT_ENABLED	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ShortcutEnabled"])
+#define SCREENEDGE_ENABLED	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ScreenEdgeEnabled"])
+#define HAPTIC_ENABLED		([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"UseHaptic"])
+#define SCREENEDGES_		(UIRectEdge)(([userDefaults boolForKey:@"ScreenEdgeLeft"] ? UIRectEdgeLeft : 0) | ([userDefaults boolForKey:@"ScreenEdgeRight"] ? UIRectEdgeRight : 0) | ([userDefaults boolForKey:@"ScreenEdgeTop"] ? UIRectEdgeTop : 0) | ([userDefaults boolForKey:@"ScreenEdgeBottom"] ? UIRectEdgeBottom : 0))
+
+static NSDictionary *hapticInfo = nil;
+
+#define hapticFeedback()	{ if (HAPTIC_ENABLED) AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo); }
+
+
 @interface SB3DTMPeekDetectorForShortcutMenuGestureRecognizer : UILongPressGestureRecognizer
 @property (nonatomic, readonly) CGFloat startMajorRadius;
 @end
@@ -56,6 +69,15 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+	if (!SHORTCUT_ENABLED) {
+		[super touchesBegan:touches withEvent:event];
+		return;
+	}
+	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"]) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
+	}
+	
 	UITouch *touch = [touches anyObject];
 	
 	_startMajorRadius = touch.majorRadius;
@@ -64,6 +86,11 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 }
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+	if (!SHORTCUT_ENABLED) {
+		[super touchesMoved:touches withEvent:event];
+		return;
+	}
+	
 	UITouch *touch = [touches anyObject];
 	
 	if (_startMajorRadius < touch.majorRadius) {
@@ -75,12 +102,6 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 }
 
 @end
-
-
-static NSDictionary *hapticInfo = nil;
-
-
-#define hapticFeedback()	AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo)
 
 
 %hook SBIconView 
@@ -110,14 +131,14 @@ static NSDictionary *hapticInfo = nil;
 }
 
 - (BOOL)_delegateTapAllowed {
-	if ([[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil && !self.isHighlighted)
+	if (SHORTCUT_ENABLED && [[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil && !self.isHighlighted)
 		return NO;
 	
 	return %orig;
 }
 
 - (void)_handleFirstHalfLongPressTimer:(id)timer {
-	if ([[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
+	if (SHORTCUT_ENABLED && [[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
 		// TODO: icon visual feedback
 		hapticFeedback();
 	}
@@ -126,7 +147,7 @@ static NSDictionary *hapticInfo = nil;
 }
 
 - (void)_handleSecondHalfLongPressTimer:(id)timer {
-	if ([[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil) {
+	if (SHORTCUT_ENABLED && [[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil) {
 		[self cancelLongPressTimer];
 		[self setHighlighted:NO];
 		return;
@@ -141,23 +162,29 @@ static NSDictionary *hapticInfo = nil;
 %hook SBIconController
 
 - (void)_handleShortcutMenuPeek:(UILongPressGestureRecognizer *)gesture {
-	if (gesture.state == UIGestureRecognizerStateCancelled 
+	if (SHORTCUT_ENABLED && (gesture.state == UIGestureRecognizerStateCancelled 
 			|| gesture.state == UIGestureRecognizerStateFailed 
-			|| gesture.state == UIGestureRecognizerStateRecognized)
+			|| gesture.state == UIGestureRecognizerStateRecognized))
 		;// TODO: icon visual feedback
+	
+	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"] 
+			&& gesture.state == UIGestureRecognizerStateBegan) {
+		// TODO: icon visual feedback
+		hapticFeedback();
+	}
 	
 	%orig;
 }
 
 - (BOOL)iconShouldAllowTap:(SBIconView *)iconView {
-	if (self.presentedShortcutMenu != nil && !iconView.isHighlighted)
+	if (SHORTCUT_ENABLED && self.presentedShortcutMenu != nil && !iconView.isHighlighted)
 		return NO;
 	
 	return %orig;
 }
 
 - (void)_revealMenuForIconView:(SBIconView *)iconView presentImmediately:(BOOL)imm {
-	%orig(iconView, YES);
+	%orig(iconView, SHORTCUT_ENABLED ? YES : imm);
 }
 
 %end
@@ -167,12 +194,12 @@ static NSDictionary *hapticInfo = nil;
 
 %hook BSPlatform
 - (BOOL)hasOrbCapability {
-	return YES;
+	return SCREENEDGE_ENABLED ? YES : %orig;
 }
 %end
 %hook SBAppSwitcherSettings
 - (BOOL)useOrbGesture {
-	return YES;
+	return SCREENEDGE_ENABLED ? YES : %orig;
 }
 %end
 
@@ -204,6 +231,11 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 - (void)_forcePressGestureBeganWithGesture:(id)arg1;
 - (void)_handleSwitcherForcePressGesture:(id)arg1;
 - (void)handleSwitcherForcePressGesture:(id)arg1;
+@end
+@interface SBUIController : NSObject
++ (id)sharedInstanceIfExists;
++ (id)sharedInstance;
+- (void)_addRemoveSwitcherGesture;
 @end
 
 @interface UIGestureRecognizerTarget : NSObject {
@@ -264,6 +296,15 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+	if (!SCREENEDGE_ENABLED) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
+	}
+	if (SCREENEDGE_ENABLED && [userDefaults boolForKey:@"ScreenEdgeNoUseLongPress"]) {
+		[super touchesBegan:touches withEvent:event];
+		return;
+	}
+	
 	_startTouches = [touches copy];
 	_startEvent = [event retain];
 	
@@ -334,6 +375,11 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 }
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+	if (SCREENEDGE_ENABLED && [userDefaults boolForKey:@"ScreenEdgeNoUseLongPress"]) {
+		[super touchesMoved:touches withEvent:event];
+		return;
+	}
+	
 	if (!self.isLongPressRecognized) {
 		UITouch *touch = [touches anyObject];
 		
@@ -380,12 +426,17 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		g = nil;
 	}
 	
+	if (!SCREENEDGE_ENABLED) {
+		%orig;
+		return;
+	}
+	
 	g = (SBSwitcherForcePressSystemGestureRecognizer *)[[%c(SB3DTMSwitcherFakeForcePressGestureRecognizer) alloc] initWithTarget:[%c(SBMainSwitcherGestureCoordinator) sharedInstance] action:@selector(__sb3dtm_handleSwitcherFakeForcePressGesture:)];
 	g.delegate = (id <UIGestureRecognizerDelegate>)self;
 	g.minimumNumberOfTouches = 1;
 	g.maximumNumberOfTouches = 1;
 	[g _setHysteresis:0];
-	g.edges = UIRectEdgeLeft;
+	g.edges = SCREENEDGES_;
 	
 	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:0xD];
 }
@@ -396,7 +447,8 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 %new
 - (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMSwitcherFakeForcePressGestureRecognizer *)gesture {
-	if (!gesture.isLongPressRecognized) return;
+	if (SCREENEDGE_ENABLED && ![userDefaults boolForKey:@"ScreenEdgeNoUseLongPress"] && !gesture.isLongPressRecognized)
+		return;
 	
 	if (gesture.state == UIGestureRecognizerStateBegan) {
 		hapticFeedback();
@@ -411,8 +463,52 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 
 
+void loadSettings() {
+	NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:@"/User/Library/Preferences/me.devbug.SB3DTouchMenu.plist"];
+	
+	if (dict) {
+		SBUIController *uic = [%c(SBUIController) sharedInstanceIfExists];
+		if (uic) {
+			//SBSwitcherForcePressSystemGestureRecognizer *g = MSHookIvar<SBSwitcherForcePressSystemGestureRecognizer *>(uic, "_switcherForcePressRecognizer");
+			//g.edges = SCREENEDGES_;
+			[uic _addRemoveSwitcherGesture];
+		}
+	}
+}
+
+__attribute__((unused))
+static void reloadPrefsNotification(CFNotificationCenterRef center,
+									void *observer,
+									CFStringRef name,
+									const void *object,
+									CFDictionaryRef userInfo) {
+	loadSettings();
+}
+
+
+
 %ctor {
-	hapticInfo = [@{ @"VibePattern" : @[ @(YES), @(35) ], @"Intensity" : @(1) } retain];
+	#define kSettingsPListName @"me.devbug.SB3DTouchMenu"
+	userDefaults = [[NSUserDefaults alloc] initWithSuiteName:kSettingsPListName];
+	[userDefaults registerDefaults:@{
+		@"Enabled" : @YES,
+		@"ShortcutEnabled" : @YES,
+		@"ShortcutNoUseEditMode" : @NO,
+		@"ScreenEdgeEnabled" : @YES,
+		@"ScreenEdgeNoUseLongPress" : @NO,
+		@"UseHaptic" : @YES,
+		@"HapticVibLength" : @(35),
+		@"ScreenEdgeLeft" : @YES,
+		@"ScreenEdgeRight" : @NO,
+		@"ScreenEdgeTop" : @NO,
+		@"ScreenEdgeBottom" : @NO
+	}];
+	
+	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &reloadPrefsNotification, CFSTR("me.devbug.SB3DTouchMenu.prefnoti"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+	loadSettings();
+	
+	
+	hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(1.0) } retain];
 	
 	MSHookFunction(_AXSForceTouchEnabled, MSHake(_AXSForceTouchEnabled));
 	
