@@ -508,13 +508,9 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 
 void loadSettings() {
-	NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:@"/User/Library/Preferences/me.devbug.SB3DTouchMenu.plist"];
-	
-	if (dict) {
-		SBUIController *uic = [%c(SBUIController) sharedInstanceIfExists];
-		if (uic) {
-			[uic _addRemoveSwitcherGesture];
-		}
+	SBUIController *uic = [%c(SBUIController) sharedInstanceIfExists];
+	if (uic) {
+		[uic _addRemoveSwitcherGesture];
 	}
 }
 
@@ -526,6 +522,17 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 									CFDictionaryRef userInfo) {
 	loadSettings();
 }
+
+
+%hook SpringBoard
+
+- (void)applicationDidFinishLaunching:(id)application {
+	%orig;
+	
+	loadSettings();
+}
+
+%end
 
 
 
