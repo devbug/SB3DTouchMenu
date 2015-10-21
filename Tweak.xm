@@ -113,6 +113,7 @@ static NSDictionary *hapticInfo = nil;
 		menuGestureCanceller.delaysTouchesEnded = NO;
 		menuGestureCanceller.cancelsTouchesInView = NO;
 		menuGestureCanceller.allowableMovement = 0.0f;
+		menuGestureCanceller.delegate = (id <UIGestureRecognizerDelegate>)self;
 		%orig(menuGestureCanceller);
 		
 		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
@@ -128,6 +129,15 @@ static NSDictionary *hapticInfo = nil;
 %new
 - (void)__sb3dtm_handleLongPressGesture:(SB3DTMPeekDetectorForShortcutMenuGestureRecognizer *)gesture {
 	
+}
+
+%new
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+	if ([gestureRecognizer isKindOfClass:[SB3DTMPeekDetectorForShortcutMenuGestureRecognizer class]] && otherGestureRecognizer != self.shortcutMenuPeekGesture) {
+		return YES;
+	}
+	
+	return NO;
 }
 
 - (BOOL)_delegateTapAllowed {
