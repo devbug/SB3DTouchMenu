@@ -275,6 +275,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 @property (nonatomic, readonly) CFTimeInterval startTime;
 @property (nonatomic, readonly) NSSet<UITouch *> *startTouches;
 @property (nonatomic, readonly) UIEvent *startEvent;
+@property (nonatomic, readonly) UIRectEdge recognizedEdges;
 
 - (instancetype)initWithTarget:(id)target action:(SEL)action;
 @end
@@ -294,6 +295,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		_startTime = 0.0f;
 		_startTouches = nil;
 		_startEvent = nil;
+		_recognizedEdges = UIRectEdgeNone;
 	}
 	
 	return self;
@@ -308,6 +310,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	_startTime = 0.0f;
 	[_startTouches release], _startTouches = nil;
 	[_startEvent release], _startEvent = nil;
+	_recognizedEdges = UIRectEdgeNone;
 	
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 }
@@ -336,23 +339,47 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	CGPoint location = [self _locationForTouch:touch];
 	
 	BOOL inEdge = NO;
+	_recognizedEdges = UIRectEdgeNone;
 	if ((self.edges & UIRectEdgeLeft) != 0 && location.x <= [self _edgeRegionSize]) {
 		inEdge = YES;
+		_recognizedEdges |= UIRectEdgeLeft;
 	}
-	if ((self.edges & UIRectEdgeRight) != 0 && (screenSize.width - location.x) <= [self _edgeRegionSize]) {
+	else if ((self.edges & UIRectEdgeRight) != 0 && (screenSize.width - location.x) <= [self _edgeRegionSize]) {
 		inEdge = YES;
+		_recognizedEdges |= UIRectEdgeRight;
 	}
 	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= [self _edgeRegionSize]) {
 		inEdge = YES;
+		_recognizedEdges |= UIRectEdgeTop;
 	}
-	if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]) {
+	else if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]) {
 		inEdge = YES;
+		_recognizedEdges |= UIRectEdgeBottom;
 	}
 	
 	if (!inEdge)
 		self.state = UIGestureRecognizerStateFailed;
 	
 	if (self.state == UIGestureRecognizerStateFailed) return;
+	
+	if (_recognizedEdges & ~(UIRectEdgeLeft | UIRectEdgeRight)) {
+		if (_recognizedEdges & ~UIRectEdgeLeft) {
+			if (location.x > location.y) {
+				_recognizedEdges &= ~UIRectEdgeLeft;
+			}
+			else {
+				_recognizedEdges = UIRectEdgeLeft;
+			}
+		}
+		else if (_recognizedEdges & ~UIRectEdgeRight) {
+			if (location.x > location.y) {
+				_recognizedEdges &= ~UIRectEdgeRight;
+			}
+			else {
+				_recognizedEdges = UIRectEdgeRight;
+			}
+		}
+	}
 	
 	if (!self.isLongPressRecognized) {
 		if (_startTime == 0.0f) {
@@ -486,8 +513,6 @@ void loadSettings() {
 	if (dict) {
 		SBUIController *uic = [%c(SBUIController) sharedInstanceIfExists];
 		if (uic) {
-			//SBSwitcherForcePressSystemGestureRecognizer *g = MSHookIvar<SBSwitcherForcePressSystemGestureRecognizer *>(uic, "_switcherForcePressRecognizer");
-			//g.edges = SCREENEDGES_;
 			[uic _addRemoveSwitcherGesture];
 		}
 	}
