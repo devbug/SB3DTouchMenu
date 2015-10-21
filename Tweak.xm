@@ -183,6 +183,8 @@ static NSDictionary *hapticInfo = nil;
 		hapticFeedback();
 	}
 	
+	if (!SHORTCUT_ENABLED) return;
+	
 	%orig;
 }
 
