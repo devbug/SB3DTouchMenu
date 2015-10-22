@@ -175,7 +175,7 @@ static NSDictionary *hapticInfo = nil;
 %hook UIDevice
 
 - (BOOL)_supportsForceTouch {
-	return SHORTCUT_ENABLED ? YES : %orig;
+	return YES;
 }
 
 %end
@@ -183,7 +183,7 @@ static NSDictionary *hapticInfo = nil;
 //extern "C" CFBooleanRef MGGetBoolAnswer(CFStringRef);
 //MSHook(CFBooleanRef, MGGetBoolAnswer, CFStringRef key) {
 //	if (CFEqual(key, CFSTR("eQd5mlz0BN0amTp/2ccMoA")))
-//		return SHORTCUT_ENABLED ? kCFBooleanFalse : _MGGetBoolAnswer(key);
+//		return kCFBooleanFalse;
 //	
 //	return _MGGetBoolAnswer(key);
 //}
