@@ -6,10 +6,16 @@ extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystem
 
 NSUserDefaults *userDefaults = nil;
 
+enum {
+	kScreenEdgeOff = 0,
+	kScreenEdgeOnWithoutLongPress,
+	kScreenEdgeOnWithLongPress
+};
+
 #define SHORTCUT_ENABLED	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ShortcutEnabled"])
 #define SCREENEDGE_ENABLED	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ScreenEdgeEnabled"])
 #define HAPTIC_ENABLED		([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"UseHaptic"])
-#define SCREENEDGES_		(UIRectEdge)(([userDefaults boolForKey:@"ScreenEdgeLeft"] ? UIRectEdgeLeft : 0) | ([userDefaults boolForKey:@"ScreenEdgeRight"] ? UIRectEdgeRight : 0) | ([userDefaults boolForKey:@"ScreenEdgeTop"] ? UIRectEdgeTop : 0) | ([userDefaults boolForKey:@"ScreenEdgeBottom"] ? UIRectEdgeBottom : 0))
+#define SCREENEDGES_		(UIRectEdge)(([userDefaults integerForKey:@"ScreenEdgeLeftInt"] != kScreenEdgeOff ? UIRectEdgeLeft : 0) | ([userDefaults integerForKey:@"ScreenEdgeRightInt"] != kScreenEdgeOff ? UIRectEdgeRight : 0) | ([userDefaults integerForKey:@"ScreenEdgeTopInt"] != kScreenEdgeOff ? UIRectEdgeTop : 0) | ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] != kScreenEdgeOff ? UIRectEdgeBottom : 0))
 
 static NSDictionary *hapticInfo = nil;
 
@@ -221,9 +227,10 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 @property (nonatomic, readonly) CFTimeInterval startTime;
 @property (nonatomic, readonly) NSSet<UITouch *> *startTouches;
 @property (nonatomic, readonly) UIEvent *startEvent;
-@property (nonatomic, readonly) UIRectEdge recognizedEdges;
+@property (nonatomic, readonly) UIRectEdge recognizedEdge;
 
 - (instancetype)initWithTarget:(id)target action:(SEL)action;
+- (BOOL)_isNoRequriedLongPress;
 @end
 
 @implementation SB3DTMSwitcherFakeForcePressGestureRecognizer
@@ -241,7 +248,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		_startTime = 0.0f;
 		_startTouches = nil;
 		_startEvent = nil;
-		_recognizedEdges = UIRectEdgeNone;
+		_recognizedEdge = UIRectEdgeNone;
 	}
 	
 	return self;
@@ -256,18 +263,37 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	_startTime = 0.0f;
 	[_startTouches release], _startTouches = nil;
 	[_startEvent release], _startEvent = nil;
-	_recognizedEdges = UIRectEdgeNone;
+	_recognizedEdge = UIRectEdgeNone;
 	
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
+}
+
+- (BOOL)_isNoRequriedLongPress {
+	if (!SCREENEDGE_ENABLED) return NO;
+	
+	if (_recognizedEdge == UIRectEdgeLeft && [userDefaults integerForKey:@"ScreenEdgeLeftInt"] == kScreenEdgeOnWithoutLongPress) {
+		_isLongPressRecognized = YES;
+		return YES;
+	}
+	else if (_recognizedEdge == UIRectEdgeRight && [userDefaults integerForKey:@"ScreenEdgeRightInt"] == kScreenEdgeOnWithoutLongPress) {
+		_isLongPressRecognized = YES;
+		return YES;
+	}
+	else if (_recognizedEdge == UIRectEdgeTop && [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithoutLongPress) {
+		_isLongPressRecognized = YES;
+		return YES;
+	}
+	else if (_recognizedEdge == UIRectEdgeBottom && [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithoutLongPress) {
+		_isLongPressRecognized = YES;
+		return YES;
+	}
+	
+	return NO;
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
 	if (!SCREENEDGE_ENABLED) {
 		self.state = UIGestureRecognizerStateFailed;
-		return;
-	}
-	if (SCREENEDGE_ENABLED && [userDefaults boolForKey:@"ScreenEdgeNoUseLongPress"]) {
-		[super touchesBegan:touches withEvent:event];
 		return;
 	}
 	
@@ -285,22 +311,22 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	CGPoint location = [self _locationForTouch:touch];
 	
 	BOOL inEdge = NO;
-	_recognizedEdges = UIRectEdgeNone;
+	_recognizedEdge = UIRectEdgeNone;
 	if ((self.edges & UIRectEdgeLeft) != 0 && location.x <= [self _edgeRegionSize]) {
 		inEdge = YES;
-		_recognizedEdges |= UIRectEdgeLeft;
+		_recognizedEdge |= UIRectEdgeLeft;
 	}
 	else if ((self.edges & UIRectEdgeRight) != 0 && (screenSize.width - location.x) <= [self _edgeRegionSize]) {
 		inEdge = YES;
-		_recognizedEdges |= UIRectEdgeRight;
+		_recognizedEdge |= UIRectEdgeRight;
 	}
 	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= [self _edgeRegionSize]) {
 		inEdge = YES;
-		_recognizedEdges |= UIRectEdgeTop;
+		_recognizedEdge |= UIRectEdgeTop;
 	}
 	else if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]) {
 		inEdge = YES;
-		_recognizedEdges |= UIRectEdgeBottom;
+		_recognizedEdge |= UIRectEdgeBottom;
 	}
 	
 	if (!inEdge)
@@ -308,23 +334,31 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	
 	if (self.state == UIGestureRecognizerStateFailed) return;
 	
-	if (_recognizedEdges & ~(UIRectEdgeLeft | UIRectEdgeRight)) {
-		if (_recognizedEdges & ~UIRectEdgeLeft) {
-			if (location.x > location.y) {
-				_recognizedEdges &= ~UIRectEdgeLeft;
+	if (_recognizedEdge & ~(UIRectEdgeLeft | UIRectEdgeRight)) {
+		CGFloat x = MIN(ABS(screenSize.width - location.x), location.x);
+		CGFloat y = MIN(ABS(screenSize.height - location.y), location.y);
+		
+		if (_recognizedEdge & ~UIRectEdgeLeft) {
+			if (x > y) {
+				_recognizedEdge &= ~UIRectEdgeLeft;
 			}
 			else {
-				_recognizedEdges = UIRectEdgeLeft;
+				_recognizedEdge = UIRectEdgeLeft;
 			}
 		}
-		else if (_recognizedEdges & ~UIRectEdgeRight) {
-			if (location.x > location.y) {
-				_recognizedEdges &= ~UIRectEdgeRight;
+		else if (_recognizedEdge & ~UIRectEdgeRight) {
+			if (x > y) {
+				_recognizedEdge &= ~UIRectEdgeRight;
 			}
 			else {
-				_recognizedEdges = UIRectEdgeRight;
+				_recognizedEdge = UIRectEdgeRight;
 			}
 		}
+	}
+	
+	if ([self _isNoRequriedLongPress]) {
+		[super touchesBegan:touches withEvent:event];
+		return;
 	}
 	
 	if (!self.isLongPressRecognized) {
@@ -365,7 +399,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 }
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	if (SCREENEDGE_ENABLED && [userDefaults boolForKey:@"ScreenEdgeNoUseLongPress"]) {
+	if ([self _isNoRequriedLongPress]) {
 		[super touchesMoved:touches withEvent:event];
 		return;
 	}
@@ -437,7 +471,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 %new
 - (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMSwitcherFakeForcePressGestureRecognizer *)gesture {
-	if (SCREENEDGE_ENABLED && ![userDefaults boolForKey:@"ScreenEdgeNoUseLongPress"] && !gesture.isLongPressRecognized)
+	if (SCREENEDGE_ENABLED && !gesture.isLongPressRecognized)
 		return;
 	
 	if (gesture.state == UIGestureRecognizerStateBegan) {
@@ -490,13 +524,12 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 		@"ShortcutEnabled" : @YES,
 		@"ShortcutNoUseEditMode" : @NO,
 		@"ScreenEdgeEnabled" : @YES,
-		@"ScreenEdgeNoUseLongPress" : @NO,
 		@"UseHaptic" : @YES,
 		@"HapticVibLength" : @(35),
-		@"ScreenEdgeLeft" : @YES,
-		@"ScreenEdgeRight" : @NO,
-		@"ScreenEdgeTop" : @NO,
-		@"ScreenEdgeBottom" : @NO
+		@"ScreenEdgeLeftInt" : @(kScreenEdgeOnWithLongPress),
+		@"ScreenEdgeRightInt" : @(kScreenEdgeOff),
+		@"ScreenEdgeTopInt" : @(kScreenEdgeOff),
+		@"ScreenEdgeBottomInt" : @(kScreenEdgeOff)
 	}];
 	
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &reloadPrefsNotification, CFSTR("me.devbug.SB3DTouchMenu.prefnoti"), NULL, CFNotificationSuspensionBehaviorCoalesce);

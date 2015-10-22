@@ -78,73 +78,139 @@
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSwitchCell</string>
+			<string>PSLinkListCell</string>
 			<key>default</key>
-			<false/>
+			<integer>2</integer>
 			<key>defaults</key>
 			<string>me.devbug.SB3DTouchMenu</string>
+			<key>detail</key>
+			<string>PSListItemsController</string>
 			<key>key</key>
-			<string>ScreenEdgeNoUseLongPress</string>
-			<key>label</key>
-			<string>No required long press</string>
-			<key>PostNotification</key>
-			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<true/>
-			<key>defaults</key>
-			<string>me.devbug.SB3DTouchMenu</string>
-			<key>key</key>
-			<string>ScreenEdgeLeft</string>
+			<string>ScreenEdgeLeftInt</string>
 			<key>label</key>
 			<string>Left</string>
 			<key>PostNotification</key>
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
+			<key>validTitles</key>
+			<array>
+				<string>Enable with long press</string>
+				<string>Enable without long press</string>
+				<string>Disable</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>2</integer>
+				<integer>1</integer>
+				<integer>0</integer>
+			</array>
+			<key>shortTitles</key>
+			<array>
+				<string>On+LP</string>
+				<string>On-LP</string>
+				<string>Off</string>
+			</array>
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSwitchCell</string>
+			<string>PSLinkListCell</string>
 			<key>default</key>
-			<false/>
+			<integer>0</integer>
 			<key>defaults</key>
 			<string>me.devbug.SB3DTouchMenu</string>
+			<key>detail</key>
+			<string>PSListItemsController</string>
 			<key>key</key>
-			<string>ScreenEdgeRight</string>
+			<string>ScreenEdgeRightInt</string>
 			<key>label</key>
 			<string>Right</string>
 			<key>PostNotification</key>
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
+			<key>validTitles</key>
+			<array>
+				<string>Enable with long press</string>
+				<string>Enable without long press</string>
+				<string>Disable</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>2</integer>
+				<integer>1</integer>
+				<integer>0</integer>
+			</array>
+			<key>shortTitles</key>
+			<array>
+				<string>On+LP</string>
+				<string>On-LP</string>
+				<string>Off</string>
+			</array>
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSwitchCell</string>
+			<string>PSLinkListCell</string>
 			<key>default</key>
-			<false/>
+			<integer>0</integer>
 			<key>defaults</key>
 			<string>me.devbug.SB3DTouchMenu</string>
+			<key>detail</key>
+			<string>PSListItemsController</string>
 			<key>key</key>
-			<string>ScreenEdgeTop</string>
+			<string>ScreenEdgeTopInt</string>
 			<key>label</key>
 			<string>Top</string>
 			<key>PostNotification</key>
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
+			<key>validTitles</key>
+			<array>
+				<string>Enable with long press</string>
+				<string>Enable without long press</string>
+				<string>Disable</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>2</integer>
+				<integer>1</integer>
+				<integer>0</integer>
+			</array>
+			<key>shortTitles</key>
+			<array>
+				<string>On+LP</string>
+				<string>On-LP</string>
+				<string>Off</string>
+			</array>
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSwitchCell</string>
+			<string>PSLinkListCell</string>
 			<key>default</key>
-			<false/>
+			<integer>0</integer>
 			<key>defaults</key>
 			<string>me.devbug.SB3DTouchMenu</string>
+			<key>detail</key>
+			<string>PSListItemsController</string>
 			<key>key</key>
-			<string>ScreenEdgeBottom</string>
+			<string>ScreenEdgeBottomInt</string>
 			<key>label</key>
 			<string>Bottom</string>
 			<key>PostNotification</key>
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
+			<key>validTitles</key>
+			<array>
+				<string>Enable with long press</string>
+				<string>Enable without long press</string>
+				<string>Disable</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>2</integer>
+				<integer>1</integer>
+				<integer>0</integer>
+			</array>
+			<key>shortTitles</key>
+			<array>
+				<string>On+LP</string>
+				<string>On-LP</string>
+				<string>Off</string>
+			</array>
 		</dict>
 		<dict>
 			<key>cell</key>
