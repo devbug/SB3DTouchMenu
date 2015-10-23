@@ -356,6 +356,13 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		}
 	}
 	
+	if (_recognizedEdge == UIRectEdgeBottom && [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithoutLongPress) {
+		if ([[%c(SBNotificationCenterController) sharedInstanceIfExists] isVisible]) {
+			self.state = UIGestureRecognizerStateFailed;
+			return;
+		}
+	}
+	
 	if ([self _isNoRequriedLongPress]) {
 		[super touchesBegan:touches withEvent:event];
 		return;

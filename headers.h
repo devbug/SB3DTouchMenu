@@ -71,5 +71,11 @@
 }
 @end
 
+@interface SBNotificationCenterController : NSObject
++ (id)sharedInstanceIfExists;
++ (id)sharedInstance;
+@property(readonly, nonatomic, getter=isVisible) BOOL visible;
+@end
+
 
 
