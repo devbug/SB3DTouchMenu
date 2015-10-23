@@ -222,6 +222,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 @property (nonatomic) CFTimeInterval minimumPressDurationForLongPress;
 @property (nonatomic) CGFloat allowableMovementForLongPress;
 @property (nonatomic, readonly) BOOL isLongPressRecognized;
+@property (nonatomic, readonly, getter=isFirstFace) BOOL firstface;
 @property (nonatomic, readonly) BOOL panning;
 @property (nonatomic, readonly) CGPoint startPoint;
 @property (nonatomic, readonly) CFTimeInterval startTime;
@@ -243,6 +244,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		self.minimumPressDurationForLongPress = 0.5f;
 		self.allowableMovementForLongPress = 10.0f;
 		_isLongPressRecognized = NO;
+		_firstface = NO;
 		_panning = NO;
 		_startPoint = CGPointMake(0,0);
 		_startTime = 0.0f;
@@ -258,6 +260,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	[super reset];
 	
 	_isLongPressRecognized = NO;
+	_firstface = NO;
 	_panning = NO;
 	_startPoint = CGPointMake(0,0);
 	_startTime = 0.0f;
@@ -272,19 +275,15 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	if (!SCREENEDGE_ENABLED) return NO;
 	
 	if (_recognizedEdge == UIRectEdgeLeft && [userDefaults integerForKey:@"ScreenEdgeLeftInt"] == kScreenEdgeOnWithoutLongPress) {
-		_isLongPressRecognized = YES;
 		return YES;
 	}
 	else if (_recognizedEdge == UIRectEdgeRight && [userDefaults integerForKey:@"ScreenEdgeRightInt"] == kScreenEdgeOnWithoutLongPress) {
-		_isLongPressRecognized = YES;
 		return YES;
 	}
 	else if (_recognizedEdge == UIRectEdgeTop && [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithoutLongPress) {
-		_isLongPressRecognized = YES;
 		return YES;
 	}
 	else if (_recognizedEdge == UIRectEdgeBottom && [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithoutLongPress) {
-		_isLongPressRecognized = YES;
 		return YES;
 	}
 	
@@ -364,6 +363,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	}
 	
 	if ([self _isNoRequriedLongPress]) {
+		_firstface = YES;
 		[super touchesBegan:touches withEvent:event];
 		return;
 	}
@@ -381,10 +381,12 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 }
 
 - (void)longPressTimerElapsed:(id)unused {
+	_isLongPressRecognized = YES;
+	
 	if (self.state != UIGestureRecognizerStateCancelled 
 			&& self.state != UIGestureRecognizerStateFailed 
 			&& self.state != UIGestureRecognizerStateRecognized) {
-		_isLongPressRecognized = YES;
+		_firstface = YES;
 		//hapticFeedback();
 		
 		if (self.panning == NO) {
@@ -407,6 +409,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
 	if ([self _isNoRequriedLongPress]) {
+		_firstface = YES;
 		[super touchesMoved:touches withEvent:event];
 		return;
 	}
@@ -429,6 +432,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 				&& self.state != UIGestureRecognizerStateFailed 
 				&& self.state != UIGestureRecognizerStateRecognized) {
 			_isLongPressRecognized = YES;
+			_firstface = YES;
 		}
 		else {
 			return;
@@ -478,7 +482,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 %new
 - (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMSwitcherFakeForcePressGestureRecognizer *)gesture {
-	if (SCREENEDGE_ENABLED && !gesture.isLongPressRecognized)
+	if (SCREENEDGE_ENABLED && !gesture.isFirstFace)
 		return;
 	
 	if (gesture.state == UIGestureRecognizerStateBegan) {
