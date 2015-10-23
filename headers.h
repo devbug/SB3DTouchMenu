@@ -38,6 +38,15 @@
 - (UIInterfaceOrientation)_touchInterfaceOrientation;
 @end
 
+@protocol SBSystemGestureRecognizerDelegate <UIGestureRecognizerDelegate>
+- (UIView *)viewForSystemGestureRecognizer:(UIGestureRecognizer *)arg1;
+@end
+
+@protocol SBTouchTemplateGestureRecognizerDelegate <SBSystemGestureRecognizerDelegate>
+@optional
+- (void)matchFailedWithMorphs:(NSArray *)arg1;
+@end
+
 @interface SBSwitcherForcePressSystemGestureRecognizer : UIScreenEdgePanGestureRecognizer @end
 
 @interface SBSystemGestureManager : NSObject
@@ -59,7 +68,7 @@
 - (void)handleSwitcherForcePressGesture:(id)arg1;
 @end
 
-@interface SBUIController : NSObject
+@interface SBUIController : NSObject <SBTouchTemplateGestureRecognizerDelegate>
 + (id)sharedInstanceIfExists;
 + (id)sharedInstance;
 - (void)_addRemoveSwitcherGesture;

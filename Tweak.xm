@@ -365,7 +365,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	if ([self _isNoRequriedLongPress]) {
 		_firstface = YES;
 		[super touchesBegan:touches withEvent:event];
-		return;
+		//return;
 	}
 	
 	if (!self.isLongPressRecognized) {
@@ -382,6 +382,11 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 - (void)longPressTimerElapsed:(id)unused {
 	_isLongPressRecognized = YES;
+	
+	if ([self _isNoRequriedLongPress] && !self.panning) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
+	}
 	
 	if (self.state != UIGestureRecognizerStateCancelled 
 			&& self.state != UIGestureRecognizerStateFailed 
@@ -409,6 +414,20 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
 	if ([self _isNoRequriedLongPress]) {
+		if (self.panning == NO) {
+			if (self.isLongPressRecognized) {
+				self.state = UIGestureRecognizerStateFailed;
+				return;
+			}
+			if (self.startTime + self.minimumPressDurationForLongPress <= [[NSDate date] timeIntervalSince1970]) {
+				_isLongPressRecognized = YES;
+				self.state = UIGestureRecognizerStateFailed;
+				return;
+			}
+			
+			_panning = YES;
+		}
+		
 		_firstface = YES;
 		[super touchesMoved:touches withEvent:event];
 		return;
@@ -467,7 +486,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	}
 	
 	g = (SBSwitcherForcePressSystemGestureRecognizer *)[[%c(SB3DTMSwitcherFakeForcePressGestureRecognizer) alloc] initWithTarget:[%c(SBMainSwitcherGestureCoordinator) sharedInstance] action:@selector(__sb3dtm_handleSwitcherFakeForcePressGesture:)];
-	g.delegate = (id <UIGestureRecognizerDelegate>)self;
+	g.delegate = self;
 	g.minimumNumberOfTouches = 1;
 	g.maximumNumberOfTouches = 1;
 	[g _setHysteresis:0];
