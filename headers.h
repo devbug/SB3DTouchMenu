@@ -32,6 +32,7 @@
 
 
 @interface UIScreenEdgePanGestureRecognizer (Private)
+- (id)initWithTarget:(id)target action:(SEL)action type:(int)type;
 - (CGFloat)_edgeRegionSize;
 - (CGPoint)_locationForTouch:(id)arg1;
 - (void)_setHysteresis:(CGFloat)arg1;

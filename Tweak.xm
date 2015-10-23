@@ -216,7 +216,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 // if landscape with iPhone/iPod touch, iOS doesn't deliver message for screen edge.
 // TODO: test on iPad
-@interface SB3DTMSwitcherFakeForcePressGestureRecognizer : UIScreenEdgePanGestureRecognizer
+@interface SB3DTMFakeForcePressGestureRecognizer : UIScreenEdgePanGestureRecognizer
 //@property (nonatomic) NSUInteger numberOfTapsRequired;	// 0
 //@property (nonatomic) NSUInteger numberOfTouchesRequired;	// 1
 @property (nonatomic) CFTimeInterval minimumPressDurationForLongPress;
@@ -231,14 +231,34 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 @property (nonatomic, readonly) UIRectEdge recognizedEdge;
 
 - (instancetype)initWithTarget:(id)target action:(SEL)action;
+- (instancetype)initWithType:(int)type target:(id)target action:(SEL)action;
 - (BOOL)_isNoRequriedLongPress;
 @end
 
-@implementation SB3DTMSwitcherFakeForcePressGestureRecognizer
+@implementation SB3DTMFakeForcePressGestureRecognizer
 
 - (instancetype)initWithTarget:(id)target action:(SEL)action {
 	// type == 1
 	self = [super initWithTarget:target action:action];
+	
+	if (self) {
+		self.minimumPressDurationForLongPress = 0.5f;
+		self.allowableMovementForLongPress = 10.0f;
+		_isLongPressRecognized = NO;
+		_firstface = NO;
+		_panning = NO;
+		_startPoint = CGPointMake(0,0);
+		_startTime = 0.0f;
+		_startTouches = nil;
+		_startEvent = nil;
+		_recognizedEdge = UIRectEdgeNone;
+	}
+	
+	return self;
+}
+
+- (instancetype)initWithType:(int)type target:(id)target action:(SEL)action {
+	self = [self initWithTarget:target action:action type:type];
 	
 	if (self) {
 		self.minimumPressDurationForLongPress = 0.5f;
@@ -485,7 +505,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		return;
 	}
 	
-	g = (SBSwitcherForcePressSystemGestureRecognizer *)[[%c(SB3DTMSwitcherFakeForcePressGestureRecognizer) alloc] initWithTarget:[%c(SBMainSwitcherGestureCoordinator) sharedInstance] action:@selector(__sb3dtm_handleSwitcherFakeForcePressGesture:)];
+	g = (SBSwitcherForcePressSystemGestureRecognizer *)[[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] initWithType:1 target:[%c(SBMainSwitcherGestureCoordinator) sharedInstance] action:@selector(__sb3dtm_handleSwitcherFakeForcePressGesture:)];
 	g.delegate = self;
 	g.minimumNumberOfTouches = 1;
 	g.maximumNumberOfTouches = 1;
@@ -500,7 +520,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 %hook SBMainSwitcherGestureCoordinator
 
 %new
-- (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMSwitcherFakeForcePressGestureRecognizer *)gesture {
+- (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMFakeForcePressGestureRecognizer *)gesture {
 	if (SCREENEDGE_ENABLED && !gesture.isFirstFace)
 		return;
 	
