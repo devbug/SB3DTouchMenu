@@ -275,6 +275,8 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	if (gesture.state == UIGestureRecognizerStateBegan) {
 		hapticFeedback();
 		[[%c(SBMainSwitcherViewController) sharedInstance] prepareForReuse];
+		[[%c(SBMainSwitcherViewController) sharedInstance] loadView];
+		[[%c(SBMainSwitcherViewController) sharedInstance] viewDidLoad];
 		[self _forcePressGestureBeganWithGesture:gesture];
 	}
 	
@@ -378,6 +380,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 
 // switcher flipping
 CGAffineTransform switcherTransform;
+CGAffineTransform switcherIconTitleTransform;
 
 %hook SBMainSwitcherViewController
 
@@ -386,23 +389,34 @@ CGAffineTransform switcherTransform;
 	
 	if (switcherAutoFlipping()) {
 		switch (gg.recognizedEdge) {
+			case UIRectEdgeTop:
+				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				break;
+			case UIRectEdgeBottom:
+				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				break;
 			case UIRectEdgeRight:
-				switcherTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				break;
 			case UIRectEdgeLeft:
 			default:
-				switcherTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 				break;
 		}
 	}
 	else {
-		switcherTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+		switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+		switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 	}
 }
 
 %end
 
-%hook SBAppSwitcherScrollView
+%hook SBSwitcherContainerView
 
 - (void)layoutSubviews {
 	%orig;
@@ -448,7 +462,7 @@ CGAffineTransform switcherTransform;
 	%orig;
 	
 	UILabel *_iconTitle = MSHookIvar<UILabel *>(self, "_iconTitle");
-	_iconTitle.transform = switcherTransform;
+	_iconTitle.transform = switcherIconTitleTransform;
 }
 
 %end
