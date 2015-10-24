@@ -24,6 +24,7 @@ extern BOOL screenEdgeEnabled();
 		self.startTouches = nil;
 		self.startEvent = nil;
 		self.systemGestureType = gsType;
+		[self _setHysteresis:0.0];
 	}
 	
 	return self;
@@ -48,6 +49,7 @@ extern BOOL screenEdgeEnabled();
 		self.startTouches = nil;
 		self.startEvent = nil;
 		self.systemGestureType = gsType;
+		[self _setHysteresis:0.0];
 	}
 	
 	return self;
