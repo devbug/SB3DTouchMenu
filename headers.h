@@ -116,6 +116,7 @@ typedef NS_ENUM(NSUInteger, SBSystemGestureType) {
 @interface SBControlCenterController : UIViewController <SBSystemGestureRecognizerDelegate>
 + (id)sharedInstanceIfExists;
 + (id)sharedInstance;
+- (BOOL)isVisible;
 @end
 
 @interface SBNotificationCenterController (NEW)

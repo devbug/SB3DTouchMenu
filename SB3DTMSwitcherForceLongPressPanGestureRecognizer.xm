@@ -265,11 +265,13 @@ extern BOOL screenEdgeEnabled();
 		}
 	}
 	
-	if (self.recognizedEdge == UIRectEdgeBottom && !self._needLongPressForBottom) {
-		if ([[%c(SBNotificationCenterController) sharedInstanceIfExists] isVisible]) {
-			self.state = UIGestureRecognizerStateFailed;
-			return;
-		}
+	if ([[%c(SBNotificationCenterController) sharedInstanceIfExists] isVisible]) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
+	}
+	if ([[%c(SBControlCenterController) sharedInstanceIfExists] isVisible]) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
 	}
 	
 	if ([self _isNoRequriedLongPress]) {
