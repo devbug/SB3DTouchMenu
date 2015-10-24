@@ -4,6 +4,7 @@
 
 
 extern BOOL screenEdgeEnabled();
+extern BOOL switcherAutoFlipping();
 
 
 %subclass SB3DTMSwitcherForceLongPressPanGestureRecognizer : SBSwitcherForcePressSystemGestureRecognizer
@@ -198,6 +199,35 @@ extern BOOL screenEdgeEnabled();
 	}
 	
 	return NO;
+}
+
+- (CGPoint)locationInView:(UIView *)view {
+	CGPoint rtn = %orig;
+	
+	if (switcherAutoFlipping()) {
+		switch (self.recognizedEdge) {
+			case UIRectEdgeRight: {
+					CGSize screenSize = [UIScreen mainScreen].bounds.size;
+					CGFloat x = screenSize.width - rtn.x;
+					rtn.x = x;
+				}
+				break;
+			case UIRectEdgeBottom: {
+					CGSize screenSize = [UIScreen mainScreen].bounds.size;
+					CGFloat x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
+					rtn.x = x;
+				}
+				break;
+			case UIRectEdgeTop: {
+					CGSize screenSize = [UIScreen mainScreen].bounds.size;
+					CGFloat x = rtn.y / screenSize.height * screenSize.width;
+					rtn.x = x;
+				}
+				break;
+		}
+	}
+	
+	return rtn;
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {

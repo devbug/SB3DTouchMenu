@@ -78,6 +78,20 @@
 		</dict>
 		<dict>
 			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>me.devbug.SB3DTouchMenu</string>
+			<key>key</key>
+			<string>SwitcherAutoFlipping</string>
+			<key>label</key>
+			<string>Auto flipping</string>
+			<key>PostNotification</key>
+			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSLinkListCell</string>
 			<key>default</key>
 			<integer>2</integer>

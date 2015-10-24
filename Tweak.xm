@@ -28,6 +28,10 @@ BOOL screenEdgeEnabled() {
 	return SCREENEDGE_ENABLED;
 }
 
+BOOL switcherAutoFlipping() {
+	return [userDefaults boolForKey:@"SwitcherAutoFlipping"];
+}
+
 
 @interface SB3DTMPeekDetectorForShortcutMenuGestureRecognizer : UILongPressGestureRecognizer
 @property (nonatomic, readonly) CGFloat startMajorRadius;
@@ -222,6 +226,8 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 
 
+SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
+
 %hook SBUIController
 
 - (void)_addRemoveSwitcherGesture {
@@ -253,6 +259,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	
 	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:fg withType:SBSystemGestureTypeSwitcherForcePress];
 	g = (SBSwitcherForcePressSystemGestureRecognizer *)fg;
+	gg = fg;
 }
 
 %end
@@ -266,6 +273,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	
 	if (gesture.state == UIGestureRecognizerStateBegan) {
 		hapticFeedback();
+		[[%c(SBMainSwitcherViewController) sharedInstance] prepareForReuse];
 		[self _forcePressGestureBeganWithGesture:gesture];
 	}
 	
@@ -367,6 +375,84 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 
 
+// switcher flipping
+CGAffineTransform switcherTransform;
+
+%hook SBMainSwitcherViewController
+
+- (void)viewWillAppear:(BOOL)animated {
+	%orig;
+	
+	if (switcherAutoFlipping()) {
+		switch (gg.recognizedEdge) {
+			case UIRectEdgeRight:
+				switcherTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+				break;
+			case UIRectEdgeLeft:
+			default:
+				switcherTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+				break;
+		}
+	}
+	else {
+		switcherTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+	}
+}
+
+%end
+
+%hook SBAppSwitcherScrollView
+
+- (void)layoutSubviews {
+	%orig;
+	
+	self.transform = switcherTransform;
+}
+
+%end
+
+%hook SBDeckSwitcherPageView
+
+- (void)layoutSubviews {
+	%orig;
+	
+	self.transform = switcherTransform;
+}
+
+%end
+
+%hook SBSwitcherAppSuggestionBottomBannerView
+
+- (void)layoutSubviews {
+	%orig;
+	
+	self.transform = switcherTransform;
+}
+
+%end
+
+%hook SBDeckSwitcherIconImageContainerView
+
+- (void)layoutSubviews {
+	%orig;
+	
+	self.transform = switcherTransform;
+}
+
+%end
+
+%hook SBDeckSwitcherItemContainer
+
+- (void)layoutSubviews {
+	%orig;
+	
+	UILabel *_iconTitle = MSHookIvar<UILabel *>(self, "_iconTitle");
+	_iconTitle.transform = switcherTransform;
+}
+
+%end
+
+
 void loadSettings() {
 	SBControlCenterController *ccc = [%c(SBControlCenterController) sharedInstanceIfExists];
 	if (ccc) {
@@ -419,7 +505,8 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 		@"ScreenEdgeLeftInt" : @(kScreenEdgeOnWithLongPress),
 		@"ScreenEdgeRightInt" : @(kScreenEdgeOff),
 		@"ScreenEdgeTopInt" : @(kScreenEdgeOff),
-		@"ScreenEdgeBottomInt" : @(kScreenEdgeOff)
+		@"ScreenEdgeBottomInt" : @(kScreenEdgeOff),
+		@"SwitcherAutoFlipping" : @YES
 	}];
 	
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &reloadPrefsNotification, CFSTR("me.devbug.SB3DTouchMenu.prefnoti"), NULL, CFNotificationSuspensionBehaviorCoalesce);
