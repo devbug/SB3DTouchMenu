@@ -12,7 +12,9 @@ SUBPROJECTS += Preferences
 include $(THEOS_MAKE_PATH)/aggregate.mk
 
 TWEAK_NAME = SB3DTouchMenu
-SB3DTouchMenu_FILES = Tweak.xm
+SB3DTouchMenu_FILES = Tweak.xm \
+					  SB3DTMSwitcherForceLongPressPanGestureRecognizer.xm \
+					  SB3DTMScreenEdgeLongPressPanGestureRecognizer.xm
 SB3DTouchMenu_FRAMEWORKS = UIKit AudioToolbox
 SB3DTouchMenu_LIBRARIES = Accessibility MobileGestalt
 

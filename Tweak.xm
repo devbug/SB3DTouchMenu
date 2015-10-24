@@ -1,4 +1,6 @@
 #import "headers.h"
+#import "SB3DTMScreenEdgeLongPressPanGestureRecognizer.h"
+#import "SB3DTMSwitcherForceLongPressPanGestureRecognizer.h"
 
 
 extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystemSoundID, id unknown, NSDictionary *options);
@@ -20,6 +22,11 @@ enum {
 static NSDictionary *hapticInfo = nil;
 
 #define hapticFeedback()	{ if (HAPTIC_ENABLED) AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo); }
+
+
+BOOL screenEdgeEnabled() {
+	return SCREENEDGE_ENABLED;
+}
 
 
 @interface SB3DTMPeekDetectorForShortcutMenuGestureRecognizer : UILongPressGestureRecognizer
@@ -214,326 +221,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 }
 
 
-// if landscape with iPhone/iPod touch, iOS doesn't deliver message for screen edge.
-// TODO: test on iPad
-@interface SB3DTMFakeForcePressGestureRecognizer : UIScreenEdgePanGestureRecognizer
-@property (nonatomic, assign) id <SBSystemGestureRecognizerDelegate> delegate;
-//@property (nonatomic) NSUInteger numberOfTapsRequired;	// 0
-//@property (nonatomic) NSUInteger numberOfTouchesRequired;	// 1
-@property (nonatomic) CFTimeInterval minimumPressDurationForLongPress;
-@property (nonatomic) CGFloat allowableMovementForLongPress;
-@property (nonatomic, readonly) BOOL isLongPressRecognized;
-@property (nonatomic, readonly, getter=isFirstFace) BOOL firstface;
-@property (nonatomic, readonly) BOOL panning;
-@property (nonatomic, readonly) CGPoint startPoint;
-@property (nonatomic, readonly) CFTimeInterval startTime;
-@property (nonatomic, readonly) NSSet<UITouch *> *startTouches;
-@property (nonatomic, readonly) UIEvent *startEvent;
-@property (nonatomic, readonly) UIRectEdge recognizedEdge;
-@property (nonatomic) BOOL _needLongPressForLeft;
-@property (nonatomic) BOOL _needLongPressForRight;
-@property (nonatomic) BOOL _needLongPressForTop;
-@property (nonatomic) BOOL _needLongPressForBottom;
-@property (nonatomic) BOOL shouldUseGrapeFlags;
-@property (nonatomic, readonly) SBSystemGestureType systemGestureType;
-
-- (instancetype)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType;
-- (instancetype)initWithType:(int)type systemGestureType:(SBSystemGestureType)gsType target:(id)target action:(SEL)action;
-@end
-
-@implementation SB3DTMFakeForcePressGestureRecognizer
-
-@dynamic delegate;
-
-- (instancetype)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType {
-	// type == 1
-	self = [super initWithTarget:target action:action];
-	
-	if (self) {
-		self.minimumPressDurationForLongPress = 0.5f;
-		self.allowableMovementForLongPress = 10.0f;
-		self._needLongPressForLeft = YES;
-		self._needLongPressForRight = YES;
-		self._needLongPressForTop = YES;
-		self._needLongPressForBottom = YES;
-		_isLongPressRecognized = NO;
-		_firstface = NO;
-		_panning = NO;
-		_startPoint = CGPointMake(0,0);
-		_startTime = 0.0f;
-		_startTouches = nil;
-		_startEvent = nil;
-		_recognizedEdge = UIRectEdgeNone;
-		_systemGestureType = gsType;
-		[self sb_commonInitScreenEdgePanGestureRecognizer];
-	}
-	
-	return self;
-}
-
-// type
-// 1 : default, 아무리 오래 눌러도 아래쪽 터치는 (인식되다가) 결국 무시됨
-// 2 : Control center default, 1초 정도 누르면 터치 실패됨
-// 4 : force press default, 
-- (instancetype)initWithType:(int)type systemGestureType:(SBSystemGestureType)gsType target:(id)target action:(SEL)action {
-	self = [self initWithTarget:target action:action type:type];
-	
-	if (self) {
-		self.minimumPressDurationForLongPress = 0.5f;
-		self.allowableMovementForLongPress = 10.0f;
-		self._needLongPressForLeft = YES;
-		self._needLongPressForRight = YES;
-		self._needLongPressForTop = YES;
-		self._needLongPressForBottom = YES;
-		_isLongPressRecognized = NO;
-		_firstface = NO;
-		_panning = NO;
-		_startPoint = CGPointMake(0,0);
-		_startTime = 0.0f;
-		_startTouches = nil;
-		_startEvent = nil;
-		_recognizedEdge = UIRectEdgeNone;
-		_systemGestureType = gsType;
-		[self sb_commonInitScreenEdgePanGestureRecognizer];
-	}
-	
-	return self;
-}
-
-- (void)sb_commonInitScreenEdgePanGestureRecognizer {
-	_shouldUseGrapeFlags = [super _shouldUseGrapeFlags];
-	[self _setHysteresis:0.0];
-}
-
-- (BOOL)_shouldUseGrapeFlags {
-	return self.shouldUseGrapeFlags;
-}
-
-- (UIInterfaceOrientation)_touchInterfaceOrientation {
-	return [(SpringBoard *)[UIApplication sharedApplication] activeInterfaceOrientation];
-}
-
-- (void)reset {
-	[super reset];
-	
-	_isLongPressRecognized = NO;
-	_firstface = NO;
-	_panning = NO;
-	_startPoint = CGPointMake(0,0);
-	_startTime = 0.0f;
-	[_startTouches release], _startTouches = nil;
-	[_startEvent release], _startEvent = nil;
-	_recognizedEdge = UIRectEdgeNone;
-	
-	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-}
-
-- (BOOL)_isNoRequriedLongPress {
-	if (!SCREENEDGE_ENABLED) return NO;
-	
-	if (_systemGestureType != SBSystemGestureTypeSwitcherForcePress) {
-		if ([[%c(SBUIController) sharedInstanceIfExists] isAppSwitcherShowing])
-			return YES;
-		
-		if (UIInterfaceOrientationIsLandscape(self._touchInterfaceOrientation))
-			return YES;
-	}
-	
-	if (_recognizedEdge == UIRectEdgeLeft && !self._needLongPressForLeft) {
-		return YES;
-	}
-	else if (_recognizedEdge == UIRectEdgeRight && !self._needLongPressForRight) {
-		return YES;
-	}
-	else if (_recognizedEdge == UIRectEdgeTop && !self._needLongPressForTop) {
-		return YES;
-	}
-	else if (_recognizedEdge == UIRectEdgeBottom && !self._needLongPressForBottom) {
-		return YES;
-	}
-	
-	return NO;
-}
-
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	if (!SCREENEDGE_ENABLED) {
-		self.state = UIGestureRecognizerStateFailed;
-		return;
-	}
-	
-	_startTouches = [touches copy];
-	_startEvent = [event retain];
-	
-	UITouch *touch = [touches anyObject];
-
-	if ([touch tapCount] != 1) {
-		self.state = UIGestureRecognizerStateFailed;
-		return;
-	}
-	
-	CGSize screenSize = [UIScreen mainScreen].bounds.size;
-	CGPoint location = [self _locationForTouch:touch];
-	
-	BOOL inEdge = NO;
-	_recognizedEdge = UIRectEdgeNone;
-	if ((self.edges & UIRectEdgeLeft) != 0 && location.x <= [self _edgeRegionSize]) {
-		inEdge = YES;
-		_recognizedEdge |= UIRectEdgeLeft;
-	}
-	else if ((self.edges & UIRectEdgeRight) != 0 && (screenSize.width - location.x) <= [self _edgeRegionSize]) {
-		inEdge = YES;
-		_recognizedEdge |= UIRectEdgeRight;
-	}
-	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= [self _edgeRegionSize]) {
-		inEdge = YES;
-		_recognizedEdge |= UIRectEdgeTop;
-	}
-	else if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]) {
-		inEdge = YES;
-		_recognizedEdge |= UIRectEdgeBottom;
-	}
-	
-	if (!inEdge)
-		self.state = UIGestureRecognizerStateFailed;
-	
-	if (self.state == UIGestureRecognizerStateFailed) return;
-	
-	if (_recognizedEdge & ~(UIRectEdgeLeft | UIRectEdgeRight)) {
-		CGFloat x = MIN(ABS(screenSize.width - location.x), location.x);
-		CGFloat y = MIN(ABS(screenSize.height - location.y), location.y);
-		
-		if (_recognizedEdge & ~UIRectEdgeLeft) {
-			if (x > y) {
-				_recognizedEdge &= ~UIRectEdgeLeft;
-			}
-			else {
-				_recognizedEdge = UIRectEdgeLeft;
-			}
-		}
-		else if (_recognizedEdge & ~UIRectEdgeRight) {
-			if (x > y) {
-				_recognizedEdge &= ~UIRectEdgeRight;
-			}
-			else {
-				_recognizedEdge = UIRectEdgeRight;
-			}
-		}
-	}
-	
-	if (_recognizedEdge == UIRectEdgeBottom && !self._needLongPressForBottom) {
-		if ([[%c(SBNotificationCenterController) sharedInstanceIfExists] isVisible]) {
-			self.state = UIGestureRecognizerStateFailed;
-			return;
-		}
-	}
-	
-	if ([self _isNoRequriedLongPress]) {
-		_firstface = YES;
-		[super touchesBegan:touches withEvent:event];
-		//return;
-	}
-	
-	if (!self.isLongPressRecognized) {
-		if (_startTime == 0.0f) {
-			_startPoint = [self _locationForTouch:touch];
-			_startTime = [[NSDate date] timeIntervalSince1970];
-			[self performSelector:@selector(longPressTimerElapsed:) withObject:self afterDelay:self.minimumPressDurationForLongPress];
-		}
-		return;
-	}
-	
-	[super touchesBegan:touches withEvent:event];
-}
-
-- (void)longPressTimerElapsed:(id)unused {
-	_isLongPressRecognized = YES;
-	
-	if ([self _isNoRequriedLongPress] && !self.panning) {
-		self.state = UIGestureRecognizerStateFailed;
-		return;
-	}
-	
-	if (self.state != UIGestureRecognizerStateCancelled 
-			&& self.state != UIGestureRecognizerStateFailed 
-			&& self.state != UIGestureRecognizerStateRecognized) {
-		_firstface = YES;
-		//hapticFeedback();
-		
-		if (self.panning == NO) {
-			[self touchesBegan:self.startTouches withEvent:self.startEvent];
-			
-			NSArray *_targets = MSHookIvar<NSArray *>(self, "_targets");
-			for (UIGestureRecognizerTarget *target in _targets) {
-				dispatch_async(dispatch_get_main_queue(), ^{
-					id t = MSHookIvar<id>(target, "_target");
-					SEL a = MSHookIvar<SEL>(target, "_action");
-					
-					[t performSelector:a withObject:self];
-				});
-			}
-			
-			_panning = YES;
-		}
-	}
-}
-
-- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	if ([self _isNoRequriedLongPress]) {
-		if (self.panning == NO) {
-			if (self.isLongPressRecognized) {
-				self.state = UIGestureRecognizerStateFailed;
-				return;
-			}
-			if (self.startTime + self.minimumPressDurationForLongPress <= [[NSDate date] timeIntervalSince1970]) {
-				_isLongPressRecognized = YES;
-				self.state = UIGestureRecognizerStateFailed;
-				return;
-			}
-			
-			_panning = YES;
-		}
-		
-		_firstface = YES;
-		[super touchesMoved:touches withEvent:event];
-		return;
-	}
-	
-	if (!self.isLongPressRecognized) {
-		UITouch *touch = [touches anyObject];
-		
-		CGPoint curPoint = [self _locationForTouch:touch];
-		CGFloat dx = fabs(_startPoint.x - curPoint.x);
-		CGFloat dy = fabs(_startPoint.y - curPoint.y);
-		CGFloat distance = sqrt(dx*dx + dy*dy);
-		
-		if (distance > self.allowableMovementForLongPress) {
-			self.state = UIGestureRecognizerStateFailed;
-			return;
-		}
-		
-		if (self.startTime + self.minimumPressDurationForLongPress <= [[NSDate date] timeIntervalSince1970]
-				&& self.state != UIGestureRecognizerStateCancelled 
-				&& self.state != UIGestureRecognizerStateFailed 
-				&& self.state != UIGestureRecognizerStateRecognized) {
-			_isLongPressRecognized = YES;
-			_firstface = YES;
-		}
-		else {
-			return;
-		}
-	}
-	
-	if (self.panning == NO) {
-		[super touchesBegan:touches withEvent:event];
-		_panning = YES;
-	}
-	
-	[super touchesMoved:touches withEvent:event];
-}
-
-@end
-
-
 
 %hook SBUIController
 
@@ -550,7 +237,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		return;
 	}
 	
-	SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] 
+	SB3DTMSwitcherForceLongPressPanGestureRecognizer *fg = [[%c(SB3DTMSwitcherForceLongPressPanGestureRecognizer) alloc] 
 																						initWithType:1 
 																				   systemGestureType:SBSystemGestureTypeSwitcherForcePress 
 																							  target:[%c(SBMainSwitcherGestureCoordinator) sharedInstance] 
@@ -573,7 +260,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 %hook SBMainSwitcherGestureCoordinator
 
 %new
-- (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMFakeForcePressGestureRecognizer *)gesture {
+- (void)__sb3dtm_handleSwitcherFakeForcePressGesture:(SB3DTMSwitcherForceLongPressPanGestureRecognizer *)gesture {
 	if (SCREENEDGE_ENABLED && !gesture.isFirstFace)
 		return;
 	
@@ -610,7 +297,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	}
 	
 	if ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithoutLongPress) {
-		SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] 
+		SB3DTMScreenEdgeLongPressPanGestureRecognizer *fg = [[%c(SB3DTMScreenEdgeLongPressPanGestureRecognizer) alloc] 
 																							initWithType:1 
 																					   systemGestureType:SBSystemGestureTypeShowControlCenter 
 																								  target:self 
@@ -620,7 +307,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		fg.maximumNumberOfTouches = 1;
 		[fg _setEdgeRegionSize:20.0f];
 		fg.edges = UIRectEdgeBottom;
-		fg._needLongPressForBottom = YES;
 		
 		g = (SBScreenEdgePanGestureRecognizer *)fg;
 	}
@@ -655,7 +341,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	}
 	
 	if ([userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithoutLongPress) {
-		SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] 
+		SB3DTMScreenEdgeLongPressPanGestureRecognizer *fg = [[%c(SB3DTMScreenEdgeLongPressPanGestureRecognizer) alloc] 
 																							initWithType:1 
 																					   systemGestureType:SBSystemGestureTypeShowNotificationCenter 
 																								  target:self 
@@ -665,7 +351,6 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		fg.maximumNumberOfTouches = 1;
 		[fg _setEdgeRegionSize:20.0f];
 		fg.edges = UIRectEdgeTop;
-		fg._needLongPressForTop = YES;
 		
 		g = (SBScreenEdgePanGestureRecognizer *)fg;
 	}
