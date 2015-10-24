@@ -259,11 +259,11 @@ extern BOOL switcherAutoFlipping();
 		inEdge = YES;
 		self.recognizedEdge |= UIRectEdgeRight;
 	}
-	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= [self _edgeRegionSize]) {
+	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= [self _edgeRegionSize]*1.5f) {
 		inEdge = YES;
 		self.recognizedEdge |= UIRectEdgeTop;
 	}
-	else if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]) {
+	else if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]*1.5f) {
 		inEdge = YES;
 		self.recognizedEdge |= UIRectEdgeBottom;
 	}

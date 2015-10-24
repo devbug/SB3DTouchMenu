@@ -252,7 +252,6 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	fg.minimumNumberOfTouches = 1;
 	fg.maximumNumberOfTouches = 1;
 	fg.edges = SCREENEDGES_;
-	[fg _setEdgeRegionSize:15.0f];
 	fg._needLongPressForLeft = [userDefaults integerForKey:@"ScreenEdgeLeftInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForRight = [userDefaults integerForKey:@"ScreenEdgeRightInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForTop = [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithLongPress;
