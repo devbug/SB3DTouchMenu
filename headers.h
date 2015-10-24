@@ -35,6 +35,7 @@
 - (id)initWithTarget:(id)target action:(SEL)action type:(int)type;
 - (CGFloat)_edgeRegionSize;
 - (CGPoint)_locationForTouch:(id)arg1;
+- (void)_setEdgeRegionSize:(CGFloat)arg1;
 - (void)_setHysteresis:(CGFloat)arg1;
 - (UIInterfaceOrientation)_touchInterfaceOrientation;
 @end
@@ -48,6 +49,7 @@
 - (void)matchFailedWithMorphs:(NSArray *)arg1;
 @end
 
+@interface SBScreenEdgePanGestureRecognizer : UIScreenEdgePanGestureRecognizer @end
 @interface SBSwitcherForcePressSystemGestureRecognizer : UIScreenEdgePanGestureRecognizer @end
 
 @interface SBSystemGestureManager : NSObject
@@ -81,10 +83,22 @@
 }
 @end
 
-@interface SBNotificationCenterController : NSObject
+@interface SBNotificationCenterController : NSObject <SBSystemGestureRecognizerDelegate>
 + (id)sharedInstanceIfExists;
 + (id)sharedInstance;
 @property(readonly, nonatomic, getter=isVisible) BOOL visible;
+@end
+
+@interface SBControlCenterController : UIViewController <SBSystemGestureRecognizerDelegate>
++ (id)sharedInstanceIfExists;
++ (id)sharedInstance;
+@end
+
+@interface SBNotificationCenterController (NEW)
+- (void)__sb3dtm_addSystemGestureRecognizer;
+@end
+@interface SBControlCenterController (NEW)
+- (void)__sb3dtm_addSystemGestureRecognizer;
 @end
 
 
