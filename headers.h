@@ -38,6 +38,7 @@
 - (void)_setEdgeRegionSize:(CGFloat)arg1;
 - (void)_setHysteresis:(CGFloat)arg1;
 - (UIInterfaceOrientation)_touchInterfaceOrientation;
+- (BOOL)_shouldUseGrapeFlags;
 @end
 
 @protocol SBSystemGestureRecognizerDelegate <UIGestureRecognizerDelegate>
@@ -51,6 +52,24 @@
 
 @interface SBScreenEdgePanGestureRecognizer : UIScreenEdgePanGestureRecognizer @end
 @interface SBSwitcherForcePressSystemGestureRecognizer : UIScreenEdgePanGestureRecognizer @end
+
+
+typedef NS_ENUM(NSUInteger, SBSystemGestureType) {
+	SBSystemGestureTypeShowNotificationCenter = 1,
+	SBSystemGestureTypeDismissBanner,
+	SBSystemGestureTypeShowControlCenter,
+	SBSystemGestureTypeSuspendApp,					// scrunch
+	SBSystemGestureTypeSwitcherSlideUp,
+	SBSystemGestureTypeSwitchApp,
+	SBSystemGestureTypeSceneResize,
+	SBSystemGestureTypeSideAppReveal,
+	SBSystemGestureTypeSideAppGrabberReveal,
+	SBSystemGestureTypeSideAppOverlayDismiss,
+	SBSystemGestureTypeSideSwitcherReveal,
+	SBSystemGestureTypeSideSwitcherGrabberPress,
+	SBSystemGestureTypeSwitcherForcePress,
+	SBSystemGestureTypeCarPlayBannerDismiss
+};
 
 @interface SBSystemGestureManager : NSObject
 + (id)mainDisplayManager;
@@ -75,12 +94,17 @@
 + (id)sharedInstanceIfExists;
 + (id)sharedInstance;
 - (void)_addRemoveSwitcherGesture;
+- (BOOL)isAppSwitcherShowing;
 @end
 
 @interface UIGestureRecognizerTarget : NSObject {
 	SEL _action;
 	id _target;
 }
+@end
+
+@interface SpringBoard : UIApplication
+- (UIInterfaceOrientation)activeInterfaceOrientation;
 @end
 
 @interface SBNotificationCenterController : NSObject <SBSystemGestureRecognizerDelegate>

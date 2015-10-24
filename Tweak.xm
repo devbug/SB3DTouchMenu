@@ -217,6 +217,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 // if landscape with iPhone/iPod touch, iOS doesn't deliver message for screen edge.
 // TODO: test on iPad
 @interface SB3DTMFakeForcePressGestureRecognizer : UIScreenEdgePanGestureRecognizer
+@property (nonatomic, assign) id <SBSystemGestureRecognizerDelegate> delegate;
 //@property (nonatomic) NSUInteger numberOfTapsRequired;	// 0
 //@property (nonatomic) NSUInteger numberOfTouchesRequired;	// 1
 @property (nonatomic) CFTimeInterval minimumPressDurationForLongPress;
@@ -233,15 +234,18 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 @property (nonatomic) BOOL _needLongPressForRight;
 @property (nonatomic) BOOL _needLongPressForTop;
 @property (nonatomic) BOOL _needLongPressForBottom;
+@property (nonatomic) BOOL shouldUseGrapeFlags;
+@property (nonatomic, readonly) SBSystemGestureType systemGestureType;
 
-- (instancetype)initWithTarget:(id)target action:(SEL)action;
-- (instancetype)initWithType:(int)type target:(id)target action:(SEL)action;
-- (BOOL)_isNoRequriedLongPress;
+- (instancetype)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType;
+- (instancetype)initWithType:(int)type systemGestureType:(SBSystemGestureType)gsType target:(id)target action:(SEL)action;
 @end
 
 @implementation SB3DTMFakeForcePressGestureRecognizer
 
-- (instancetype)initWithTarget:(id)target action:(SEL)action {
+@dynamic delegate;
+
+- (instancetype)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType {
 	// type == 1
 	self = [super initWithTarget:target action:action];
 	
@@ -260,6 +264,8 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		_startTouches = nil;
 		_startEvent = nil;
 		_recognizedEdge = UIRectEdgeNone;
+		_systemGestureType = gsType;
+		[self sb_commonInitScreenEdgePanGestureRecognizer];
 	}
 	
 	return self;
@@ -268,7 +274,8 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 // type
 // 1 : default, 아무리 오래 눌러도 아래쪽 터치는 (인식되다가) 결국 무시됨
 // 2 : Control center default, 1초 정도 누르면 터치 실패됨
-- (instancetype)initWithType:(int)type target:(id)target action:(SEL)action {
+// 4 : force press default, 
+- (instancetype)initWithType:(int)type systemGestureType:(SBSystemGestureType)gsType target:(id)target action:(SEL)action {
 	self = [self initWithTarget:target action:action type:type];
 	
 	if (self) {
@@ -286,9 +293,24 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		_startTouches = nil;
 		_startEvent = nil;
 		_recognizedEdge = UIRectEdgeNone;
+		_systemGestureType = gsType;
+		[self sb_commonInitScreenEdgePanGestureRecognizer];
 	}
 	
 	return self;
+}
+
+- (void)sb_commonInitScreenEdgePanGestureRecognizer {
+	_shouldUseGrapeFlags = [super _shouldUseGrapeFlags];
+	[self _setHysteresis:0.0];
+}
+
+- (BOOL)_shouldUseGrapeFlags {
+	return self.shouldUseGrapeFlags;
+}
+
+- (UIInterfaceOrientation)_touchInterfaceOrientation {
+	return [(SpringBoard *)[UIApplication sharedApplication] activeInterfaceOrientation];
 }
 
 - (void)reset {
@@ -308,6 +330,14 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 
 - (BOOL)_isNoRequriedLongPress {
 	if (!SCREENEDGE_ENABLED) return NO;
+	
+	if (_systemGestureType != SBSystemGestureTypeSwitcherForcePress) {
+		if ([[%c(SBUIController) sharedInstanceIfExists] isAppSwitcherShowing])
+			return YES;
+		
+		if (UIInterfaceOrientationIsLandscape(self._touchInterfaceOrientation))
+			return YES;
+	}
 	
 	if (_recognizedEdge == UIRectEdgeLeft && !self._needLongPressForLeft) {
 		return YES;
@@ -520,18 +550,21 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		return;
 	}
 	
-	SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] initWithType:1 target:[%c(SBMainSwitcherGestureCoordinator) sharedInstance] action:@selector(__sb3dtm_handleSwitcherFakeForcePressGesture:)];
+	SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] 
+																						initWithType:1 
+																				   systemGestureType:SBSystemGestureTypeSwitcherForcePress 
+																							  target:[%c(SBMainSwitcherGestureCoordinator) sharedInstance] 
+																							  action:@selector(__sb3dtm_handleSwitcherFakeForcePressGesture:)];
 	fg.delegate = self;
 	fg.minimumNumberOfTouches = 1;
 	fg.maximumNumberOfTouches = 1;
-	[fg _setHysteresis:0];
 	fg.edges = SCREENEDGES_;
 	fg._needLongPressForLeft = [userDefaults integerForKey:@"ScreenEdgeLeftInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForRight = [userDefaults integerForKey:@"ScreenEdgeRightInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForTop = [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForBottom = [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithLongPress;
 	
-	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:fg withType:0xD];
+	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:fg withType:SBSystemGestureTypeSwitcherForcePress];
 	g = (SBSwitcherForcePressSystemGestureRecognizer *)fg;
 }
 
@@ -577,11 +610,14 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	}
 	
 	if ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithoutLongPress) {
-		SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] initWithType:1 target:self action:@selector(_handleShowControlCenterGesture:)];
+		SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] 
+																							initWithType:1 
+																					   systemGestureType:SBSystemGestureTypeShowControlCenter 
+																								  target:self 
+																								  action:@selector(_handleShowControlCenterGesture:)];
 		fg.delegate = self;
 		fg.minimumNumberOfTouches = 1;
 		fg.maximumNumberOfTouches = 1;
-		[fg _setHysteresis:0];
 		[fg _setEdgeRegionSize:20.0f];
 		fg.edges = UIRectEdgeBottom;
 		fg._needLongPressForBottom = YES;
@@ -594,7 +630,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		g.delegate = self;
 	}
 	
-	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:3];
+	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:SBSystemGestureTypeShowControlCenter];
 }
 
 %end
@@ -619,11 +655,14 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 	}
 	
 	if ([userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithoutLongPress) {
-		SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] initWithType:1 target:self action:@selector(_handleShowNotificationCenterGesture:)];
+		SB3DTMFakeForcePressGestureRecognizer *fg = [[%c(SB3DTMFakeForcePressGestureRecognizer) alloc] 
+																							initWithType:1 
+																					   systemGestureType:SBSystemGestureTypeShowNotificationCenter 
+																								  target:self 
+																								  action:@selector(_handleShowNotificationCenterGesture:)];
 		fg.delegate = self;
 		fg.minimumNumberOfTouches = 1;
 		fg.maximumNumberOfTouches = 1;
-		[fg _setHysteresis:0];
 		[fg _setEdgeRegionSize:20.0f];
 		fg.edges = UIRectEdgeTop;
 		fg._needLongPressForTop = YES;
@@ -636,7 +675,7 @@ MSHook(BOOL, _AXSForceTouchEnabled) {
 		g.delegate = self;
 	}
 	
-	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:1];
+	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:SBSystemGestureTypeShowNotificationCenter];
 }
 
 %end
