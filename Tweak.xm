@@ -274,9 +274,6 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	
 	if (gesture.state == UIGestureRecognizerStateBegan) {
 		hapticFeedback();
-		[[%c(SBMainSwitcherViewController) sharedInstance] prepareForReuse];
-		[[%c(SBMainSwitcherViewController) sharedInstance] loadView];
-		[[%c(SBMainSwitcherViewController) sharedInstance] viewDidLoad];
 		[self _forcePressGestureBeganWithGesture:gesture];
 	}
 	
@@ -412,6 +409,13 @@ CGAffineTransform switcherIconTitleTransform;
 		switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 		switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 	}
+}
+
+%new
+- (void)viewDidDisappear:(BOOL)animated {
+	[self prepareForReuse];
+	[self loadView];
+	[self viewDidLoad];
 }
 
 %end
