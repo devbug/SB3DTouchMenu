@@ -250,7 +250,7 @@
 			<key>cell</key>
 			<string>PSSliderCell</string>
 			<key>default</key>
-			<integer>35</integer>
+			<integer>40</integer>
 			<key>min</key>
 			<integer>20</integer>
 			<key>max</key>
