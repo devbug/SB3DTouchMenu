@@ -371,12 +371,6 @@ extern BOOL screenEdgeEnabled();
 		}
 	}
 	
-	if (self.panning == NO) {
-		objc_super $super = {self, %c(SBSwitcherForcePressSystemGestureRecognizer)};
-		objc_msgSendSuper(&$super, @selector(touchesBegan:withEvent:), touches, event);
-		self.panning = YES;
-	}
-	
 	%orig;
 }
 
