@@ -107,9 +107,6 @@ extern BOOL screenEdgeEnabled();
 %new - (BOOL)_needLongPressForBottom {
 	return [objc_getAssociatedObject(self, @selector(_needLongPressForBottom)) boolValue];
 }
-%new - (BOOL)shouldUseGrapeFlags {
-	return [objc_getAssociatedObject(self, @selector(shouldUseGrapeFlags)) boolValue];
-}
 %new - (SBSystemGestureType)systemGestureType {
 	return [objc_getAssociatedObject(self, @selector(systemGestureType)) unsignedLongLongValue];
 }
@@ -155,9 +152,6 @@ extern BOOL screenEdgeEnabled();
 }
 %new - (void)set_needLongPressForBottom:(BOOL)value {
 	objc_setAssociatedObject(self, @selector(_needLongPressForBottom), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-%new - (void)setShouldUseGrapeFlags:(BOOL)value {
-	objc_setAssociatedObject(self, @selector(shouldUseGrapeFlags), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 %new - (void)setSystemGestureType:(SBSystemGestureType)value {
 	objc_setAssociatedObject(self, @selector(systemGestureType), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);

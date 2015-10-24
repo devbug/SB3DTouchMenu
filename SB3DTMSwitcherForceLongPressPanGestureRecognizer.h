@@ -19,7 +19,6 @@
 @property (nonatomic) BOOL _needLongPressForRight;
 @property (nonatomic) BOOL _needLongPressForTop;
 @property (nonatomic) BOOL _needLongPressForBottom;
-@property (nonatomic) BOOL shouldUseGrapeFlags;
 @property (nonatomic) SBSystemGestureType systemGestureType;
 
 - (id)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType;
