@@ -32,6 +32,10 @@ BOOL switcherAutoFlipping() {
 	return [userDefaults boolForKey:@"SwitcherAutoFlipping"];
 }
 
+BOOL screenEdgeDisableOnKeyboard() {
+	return [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
+}
+
 
 @interface SB3DTMPeekDetectorForShortcutMenuGestureRecognizer : UILongPressGestureRecognizer
 @property (nonatomic, readonly) CGFloat startMajorRadius;
@@ -525,7 +529,8 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 		@"ScreenEdgeRightInt" : @(kScreenEdgeOff),
 		@"ScreenEdgeTopInt" : @(kScreenEdgeOff),
 		@"ScreenEdgeBottomInt" : @(kScreenEdgeOff),
-		@"SwitcherAutoFlipping" : @YES
+		@"SwitcherAutoFlipping" : @YES,
+		@"ScreenEdgeDisableOnKeyboard" : @NO
 	}];
 	
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &reloadPrefsNotification, CFSTR("me.devbug.SB3DTouchMenu.prefnoti"), NULL, CFNotificationSuspensionBehaviorCoalesce);

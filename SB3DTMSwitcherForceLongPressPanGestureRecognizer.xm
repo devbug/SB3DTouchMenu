@@ -5,6 +5,7 @@
 
 extern BOOL screenEdgeEnabled();
 extern BOOL switcherAutoFlipping();
+extern BOOL screenEdgeDisableOnKeyboard();
 
 
 %subclass SB3DTMSwitcherForceLongPressPanGestureRecognizer : SBSwitcherForcePressSystemGestureRecognizer
@@ -204,6 +205,8 @@ extern BOOL switcherAutoFlipping();
 - (CGPoint)locationInView:(UIView *)view {
 	CGPoint rtn = %orig;
 	
+	if ([view isKindOfClass:%c(UIKeyboard)]) return rtn;
+	
 	if (switcherAutoFlipping()) {
 		switch (self.recognizedEdge) {
 			case UIRectEdgeRight: {
@@ -248,6 +251,14 @@ extern BOOL switcherAutoFlipping();
 	
 	CGSize screenSize = [UIScreen mainScreen].bounds.size;
 	CGPoint location = [self _locationForTouch:touch];
+	
+	if (screenEdgeDisableOnKeyboard() && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
+		CGRect frame = [%c(UIPeripheralHost) visiblePeripheralFrame];
+		if (CGRectContainsPoint(frame, location)) {
+			self.state = UIGestureRecognizerStateFailed;
+			return;
+		}
+	}
 	
 	BOOL inEdge = NO;
 	CGFloat edgeRegionSize = [self _edgeRegionSize];

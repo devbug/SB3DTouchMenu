@@ -142,3 +142,12 @@ typedef NS_ENUM(NSUInteger, SBSystemGestureType) {
 @end
 
 
+@interface UIPeripheralHost : NSObject
++ (id)activeInstance;
++ (id)sharedInstance;
++ (struct CGRect)visiblePeripheralFrame;
+- (BOOL)isOffScreen;
+- (BOOL)isOnScreen;
+@end
+
+
