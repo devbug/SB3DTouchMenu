@@ -250,20 +250,21 @@ extern BOOL switcherAutoFlipping();
 	CGPoint location = [self _locationForTouch:touch];
 	
 	BOOL inEdge = NO;
+	CGFloat edgeRegionSize = [self _edgeRegionSize];
 	self.recognizedEdge = UIRectEdgeNone;
-	if ((self.edges & UIRectEdgeLeft) != 0 && location.x <= [self _edgeRegionSize]) {
+	if ((self.edges & UIRectEdgeLeft) != 0 && location.x <= (!self._needLongPressForLeft ? edgeRegionSize * 0.15f : edgeRegionSize)) {
 		inEdge = YES;
 		self.recognizedEdge |= UIRectEdgeLeft;
 	}
-	else if ((self.edges & UIRectEdgeRight) != 0 && (screenSize.width - location.x) <= [self _edgeRegionSize]) {
+	else if ((self.edges & UIRectEdgeRight) != 0 && (screenSize.width - location.x) <= (!self._needLongPressForRight ? edgeRegionSize * 0.15f : edgeRegionSize)) {
 		inEdge = YES;
 		self.recognizedEdge |= UIRectEdgeRight;
 	}
-	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= [self _edgeRegionSize]*1.5f) {
+	if ((self.edges & UIRectEdgeTop) != 0 && location.y <= (!self._needLongPressForTop ? edgeRegionSize * 0.5f : edgeRegionSize)) {
 		inEdge = YES;
 		self.recognizedEdge |= UIRectEdgeTop;
 	}
-	else if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= [self _edgeRegionSize]*1.5f) {
+	else if ((self.edges & UIRectEdgeBottom) != 0 && (screenSize.height - location.y) <= (!self._needLongPressForBottom ? edgeRegionSize * 0.5f : edgeRegionSize)) {
 		inEdge = YES;
 		self.recognizedEdge |= UIRectEdgeBottom;
 	}
