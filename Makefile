@@ -26,6 +26,7 @@ after-install::
 ri:: remoteinstall
 remoteinstall:: all internal-remoteinstall after-remoteinstall
 internal-remoteinstall::
+	ssh root@$(FW_DEVICE_IP) "rm -f /Library/MobileSubstrate/DynamicLibraries/$(TWEAK_NAME).dylib"
 	scp -P 22 "$(FW_PROJECT_DIR)/$(THEOS_OBJ_DIR_NAME)/$(TWEAK_NAME).dylib" root@$(FW_DEVICE_IP):/Library/MobileSubstrate/DynamicLibraries/
 	scp -P 22 "$(FW_PROJECT_DIR)/$(TWEAK_NAME).plist" root@$(FW_DEVICE_IP):/Library/MobileSubstrate/DynamicLibraries/
 after-remoteinstall::

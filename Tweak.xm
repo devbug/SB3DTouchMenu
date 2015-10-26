@@ -382,6 +382,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 // switcher flipping
 CGAffineTransform switcherTransform;
 CGAffineTransform switcherIconTitleTransform;
+CGAffineTransform switcherAppSuggestionTransform;
 
 %hook SBMainSwitcherViewController
 
@@ -392,26 +393,31 @@ CGAffineTransform switcherIconTitleTransform;
 		switch (gg.recognizedEdge) {
 			case UIRectEdgeTop:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				break;
 			case UIRectEdgeBottom:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				break;
 			case UIRectEdgeRight:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 				break;
 			case UIRectEdgeLeft:
 			default:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+				switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 				break;
 		}
 	}
 	else {
 		switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-		switcherIconTitleTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+		switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+		switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 	}
 }
 
@@ -439,6 +445,9 @@ CGAffineTransform switcherIconTitleTransform;
 - (void)layoutSubviews {
 	%orig;
 	
+	for (UIView *v in self.subviews) {
+		if ([v isKindOfClass:%c(SBSwitcherAppSuggestionSlideUpView)]) return;
+	}
 	self.transform = switcherTransform;
 }
 
@@ -449,10 +458,73 @@ CGAffineTransform switcherIconTitleTransform;
 - (void)layoutSubviews {
 	%orig;
 	
-	self.transform = switcherTransform;
+	//self.transform = switcherIconTitleTransform;
 }
 
 %end
+
+@interface SBSwitcherAppSuggestionSlideUpView : UIView @end
+@interface SBSwitcherAppSuggestionContentView : UIView @end
+@interface SBApplication : NSObject
+- (NSString *)bundleIdentifier;
+@end
+@interface SBApplicationController : NSObject
++ (id)sharedInstanceIfExists;
++ (id)sharedInstance;
+- (SBApplication *)musicApplication;
+@end
+@interface SBBestAppSuggestion : NSObject @end
+%hook SBDeckSwitcherViewController
+- (UIInterfaceOrientation)orientationForSuggestionViewController:(id)appSuggestionViewController {
+	if (switcherAutoFlipping()) {
+		switch (gg.recognizedEdge) {
+			case UIRectEdgeTop:
+				return UIInterfaceOrientationLandscapeRight;
+				break;
+			case UIRectEdgeBottom:
+				return UIInterfaceOrientationLandscapeLeft;
+				break;
+			case UIRectEdgeRight:
+				return UIInterfaceOrientationPortrait;
+				break;
+			case UIRectEdgeLeft:
+			default:
+				return UIInterfaceOrientationPortrait;
+				break;
+		}
+	}
+	
+	return %orig;
+}
+%end
+%hook SBSwitcherAppSuggestionSlideUpView
+- (void)layoutSubviews {
+	%orig;
+	
+	//self.transform = switcherAppSuggestionTransform;
+}
+%end
+%hook SBSwitcherAppSuggestionContentView
+- (void)layoutSubviews {
+	%orig;
+	
+	self.transform = switcherIconTitleTransform;
+}
+%end
+/* for test
+%hook SBBestAppSuggestion
+- (id)bundleIdentifier {
+	return [[[%c(SBApplicationController) sharedInstanceIfExists] musicApplication] bundleIdentifier];
+}
+- (_Bool)isHeadphonesPrediction {
+	return YES;
+}
+%end
+%hook SBAppSuggestionManager
+- (id)currentSuggestedApp {
+	return [[[%c(SBBestAppSuggestion) alloc] init] autorelease];
+}
+%end*/
 
 %hook SBDeckSwitcherIconImageContainerView
 
