@@ -383,6 +383,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 CGAffineTransform switcherTransform;
 CGAffineTransform switcherIconTitleTransform;
 CGAffineTransform switcherAppSuggestionTransform;
+UIRectEdge recognizedEdge = UIRectEdgeNone;
 
 %hook SBMainSwitcherViewController
 
@@ -390,6 +391,7 @@ CGAffineTransform switcherAppSuggestionTransform;
 	%orig;
 	
 	if (switcherAutoFlipping()) {
+		recognizedEdge = gg.recognizedEdge;
 		switch (gg.recognizedEdge) {
 			case UIRectEdgeTop:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
@@ -445,15 +447,39 @@ CGAffineTransform switcherAppSuggestionTransform;
 - (void)layoutSubviews {
 	%orig;
 	
-	for (UIView *v in self.subviews) {
-		if ([v isKindOfClass:%c(SBSwitcherAppSuggestionSlideUpView)]) return;
-	}
 	self.transform = switcherTransform;
 }
 
 %end
 
-%hook SBSwitcherAppSuggestionContentView
+%hook SBSwitcherAppSuggestionSlideUpView
+
+- (void)layoutSubviews {
+	%orig;
+	
+	if (switcherAutoFlipping()) {
+		SBOrientationTransformWrapperView *_appViewLayoutWrapper = MSHookIvar<SBOrientationTransformWrapperView *>(self, "_appViewLayoutWrapper");
+		CGRect frame = _appViewLayoutWrapper.frame;
+		switch (recognizedEdge) {
+			case UIRectEdgeTop:
+				self.clipsToBounds = NO;
+				frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
+				frame.origin.y = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+				_appViewLayoutWrapper.frame = frame;
+				break;
+			case UIRectEdgeBottom:
+				self.clipsToBounds = NO;
+				frame.origin.x = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+				frame.origin.y -= (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+				_appViewLayoutWrapper.frame = frame;
+				break;
+		}
+	}
+}
+
+%end
+
+%hook SBSwitcherAppSuggestionBottomBannerView
 
 - (void)layoutSubviews {
 	%orig;
@@ -461,6 +487,57 @@ CGAffineTransform switcherAppSuggestionTransform;
 	self.transform = switcherIconTitleTransform;
 }
 
+%end
+
+%hook SBSwitcherAppSuggestionViewController
+
+- (CGRect)_presentedRectForContentView {
+	if (switcherAutoFlipping() && recognizedEdge != UIRectEdgeNone) {
+		CGRect rtn = [[UIScreen mainScreen] bounds];
+		rtn.origin.x = self.view.bounds.origin.x;
+		rtn.origin.y = self.view.bounds.origin.y;
+		return rtn;
+	}
+	
+	return %orig;
+	//return self.view.bounds;
+}
+
+- (NSUInteger)_bottomBannerStyle {
+	if (switcherAutoFlipping()) {
+		switch (recognizedEdge) {
+			case UIRectEdgeTop:
+			case UIRectEdgeBottom:
+				return 0;
+		}
+	}
+	
+	return %orig;
+	
+	//if (UI_USER_INTERFACE_IDIOM() != UIUserInterfaceIdiomPad) {
+	//	if ([[[[%c(SBSceneManagerCoordinator) mainDisplaySceneManager] layoutController] layoutState] interfaceOrientation] - 3 < 2) {
+	//		return 0;
+	//	}
+	//}
+	//
+	//return 1;
+}
+
+%end
+
+// for test
+%hook SBBestAppSuggestion
+- (id)bundleIdentifier {
+	return [[[%c(SBApplicationController) sharedInstanceIfExists] musicApplication] bundleIdentifier];
+}
+- (_Bool)isHeadphonesPrediction {
+	return YES;
+}
+%end
+%hook SBAppSuggestionManager
+- (id)currentSuggestedApp {
+	return [[[%c(SBBestAppSuggestion) alloc] init] autorelease];
+}
 %end
 
 %hook SBDeckSwitcherIconImageContainerView
