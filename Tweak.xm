@@ -453,78 +453,15 @@ CGAffineTransform switcherAppSuggestionTransform;
 
 %end
 
-%hook SBSwitcherAppSuggestionBottomBannerView
-
-- (void)layoutSubviews {
-	%orig;
-	
-	//self.transform = switcherIconTitleTransform;
-}
-
-%end
-
-@interface SBSwitcherAppSuggestionSlideUpView : UIView @end
-@interface SBSwitcherAppSuggestionContentView : UIView @end
-@interface SBApplication : NSObject
-- (NSString *)bundleIdentifier;
-@end
-@interface SBApplicationController : NSObject
-+ (id)sharedInstanceIfExists;
-+ (id)sharedInstance;
-- (SBApplication *)musicApplication;
-@end
-@interface SBBestAppSuggestion : NSObject @end
-%hook SBDeckSwitcherViewController
-- (UIInterfaceOrientation)orientationForSuggestionViewController:(id)appSuggestionViewController {
-	if (switcherAutoFlipping()) {
-		switch (gg.recognizedEdge) {
-			case UIRectEdgeTop:
-				return UIInterfaceOrientationLandscapeRight;
-				break;
-			case UIRectEdgeBottom:
-				return UIInterfaceOrientationLandscapeLeft;
-				break;
-			case UIRectEdgeRight:
-				return UIInterfaceOrientationPortrait;
-				break;
-			case UIRectEdgeLeft:
-			default:
-				return UIInterfaceOrientationPortrait;
-				break;
-		}
-	}
-	
-	return %orig;
-}
-%end
-%hook SBSwitcherAppSuggestionSlideUpView
-- (void)layoutSubviews {
-	%orig;
-	
-	//self.transform = switcherAppSuggestionTransform;
-}
-%end
 %hook SBSwitcherAppSuggestionContentView
+
 - (void)layoutSubviews {
 	%orig;
 	
 	self.transform = switcherIconTitleTransform;
 }
+
 %end
-/* for test
-%hook SBBestAppSuggestion
-- (id)bundleIdentifier {
-	return [[[%c(SBApplicationController) sharedInstanceIfExists] musicApplication] bundleIdentifier];
-}
-- (_Bool)isHeadphonesPrediction {
-	return YES;
-}
-%end
-%hook SBAppSuggestionManager
-- (id)currentSuggestedApp {
-	return [[[%c(SBBestAppSuggestion) alloc] init] autorelease];
-}
-%end*/
 
 %hook SBDeckSwitcherIconImageContainerView
 

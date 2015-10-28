@@ -151,3 +151,20 @@ typedef NS_ENUM(NSUInteger, SBSystemGestureType) {
 @end
 
 
+@interface SBOrientationTransformWrapperView : UIView
+@property(nonatomic) UIInterfaceOrientation containerOrientation;
+@property(nonatomic) UIInterfaceOrientation contentOrientation;
+- (struct CGAffineTransform)_transformForContainerOrientation:(UIInterfaceOrientation)arg1 contentOrientation:(UIInterfaceOrientation)arg2;
+@end
+@interface SBSwitcherAppSuggestionSlideUpView : UIView @end
+@interface SBSwitcherAppSuggestionContentView : UIView @end
+@interface SBApplication : NSObject
+- (NSString *)bundleIdentifier;
+@end
+@interface SBApplicationController : NSObject
++ (id)sharedInstanceIfExists;
++ (id)sharedInstance;
+- (SBApplication *)musicApplication;
+@end
+@interface SBBestAppSuggestion : NSObject @end
+
