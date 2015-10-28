@@ -500,7 +500,6 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	}
 	
 	return %orig;
-	//return self.view.bounds;
 }
 
 - (NSUInteger)_bottomBannerStyle {
@@ -513,31 +512,8 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	}
 	
 	return %orig;
-	
-	//if (UI_USER_INTERFACE_IDIOM() != UIUserInterfaceIdiomPad) {
-	//	if ([[[[%c(SBSceneManagerCoordinator) mainDisplaySceneManager] layoutController] layoutState] interfaceOrientation] - 3 < 2) {
-	//		return 0;
-	//	}
-	//}
-	//
-	//return 1;
 }
 
-%end
-
-// for test
-%hook SBBestAppSuggestion
-- (id)bundleIdentifier {
-	return [[[%c(SBApplicationController) sharedInstanceIfExists] musicApplication] bundleIdentifier];
-}
-- (_Bool)isHeadphonesPrediction {
-	return YES;
-}
-%end
-%hook SBAppSuggestionManager
-- (id)currentSuggestedApp {
-	return [[[%c(SBBestAppSuggestion) alloc] init] autorelease];
-}
 %end
 
 %hook SBDeckSwitcherIconImageContainerView
