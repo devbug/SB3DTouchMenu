@@ -4,7 +4,15 @@
 
 
 
+@interface UIInteractionProgress : NSObject
+@property (nonatomic, readonly) CGFloat percentComplete;
+@property (nonatomic, readonly) CGFloat velocity;
+@end
+@interface UIPreviewForceInteractionProgress : UIInteractionProgress
+@property (setter=_setTargetState:, nonatomic) int _targetState;
+@end
 @interface SBIconView : UIView
+@property(retain, nonatomic) UIPreviewForceInteractionProgress *shortcutMenuPresentProgress;
 @property(retain, nonatomic) UILongPressGestureRecognizer *shortcutMenuPeekGesture;
 - (void)cancelLongPressTimer;
 - (void)setHighlighted:(BOOL)arg1;

@@ -187,9 +187,23 @@ BOOL screenEdgeDisableOnKeyboard() {
 }
 
 - (void)_revealMenuForIconView:(SBIconView *)iconView presentImmediately:(BOOL)imm {
-	%orig(iconView, SHORTCUT_ENABLED ? YES : imm);
+	//%orig(iconView, SHORTCUT_ENABLED ? YES : imm);
+	%orig;
 }
 
+%end
+
+%hook _UITouchForceObservable
+- (CGFloat)_maximumPossibleForceForTouches:(NSSet<UITouch *> *)touches {
+	CGFloat rtn = %orig;
+	return rtn;
+}
+- (CGFloat)_unclampedTouchForceForTouches:(NSSet<UITouch *> *)touches {
+	//CGFloat rtn = %orig;
+	UITouch *touch = [touches anyObject];
+	CGFloat rtn = touch.majorRadius / 12.0f;
+	return rtn;
+}
 %end
 
 
