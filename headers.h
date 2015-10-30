@@ -134,7 +134,7 @@ typedef NS_ENUM(NSUInteger, SBSystemGestureType) {
 @interface SBDeckSwitcherIconImageContainerView : UIView @end
 @interface SBDeckSwitcherItemContainer : UIView @end
 
-@interface SBMainSwitcherViewController : NSObject
+@interface SBMainSwitcherViewController : UIViewController
 + (id)sharedInstance;
 - (void)prepareForReuse;
 - (void)viewDidLoad;
