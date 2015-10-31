@@ -4,7 +4,7 @@ SDKVERSION = 9.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION = 9.0
 SYSROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS9.0.sdk
 
-PACKAGE_VERSION = 1.2.2-1
+PACKAGE_VERSION = 1.2.2-2
 
 include $(THEOS)/makefiles/common.mk
 
