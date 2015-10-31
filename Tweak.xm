@@ -108,6 +108,8 @@ BOOL screenEdgeDisableOnKeyboard() {
 		%orig(menuGestureCanceller);
 		
 		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
+		[toAddGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
+		[toAddGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
 		[toAddGesture setRequiredPreviewForceState:0];
 		[toAddGesture requireGestureRecognizerToFail:menuGestureCanceller];
 		
@@ -120,6 +122,18 @@ BOOL screenEdgeDisableOnKeyboard() {
 %new
 - (void)__sb3dtm_handleLongPressGesture:(SB3DTMPeekDetectorForShortcutMenuGestureRecognizer *)gesture {
 	
+}
+
+%new
+- (void)__sb3dtm_handleForceTouchGesture:(UILongPressGestureRecognizer *)gesture {
+	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"] 
+			&& gesture.state == UIGestureRecognizerStateBegan) {
+		hapticFeedback();
+	}
+	
+	if (!SHORTCUT_ENABLED) return;
+	
+	[[%c(SBIconController) sharedInstance] _handleShortcutMenuPeek:gesture];
 }
 
 %new
@@ -159,17 +173,6 @@ BOOL screenEdgeDisableOnKeyboard() {
 %end
 
 %hook SBIconController
-
-- (void)_handleShortcutMenuPeek:(UILongPressGestureRecognizer *)gesture {
-	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"] 
-			&& gesture.state == UIGestureRecognizerStateBegan) {
-		hapticFeedback();
-	}
-	
-	if (!SHORTCUT_ENABLED) return;
-	
-	%orig;
-}
 
 - (BOOL)iconShouldAllowTap:(SBIconView *)iconView {
 	if (SHORTCUT_ENABLED && self.presentedShortcutMenu != nil && !iconView.isHighlighted)
