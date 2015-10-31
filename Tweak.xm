@@ -559,6 +559,9 @@ void loadSettings() {
 	if (uic) {
 		[uic _addRemoveSwitcherGesture];
 	}
+	
+	[hapticInfo release];
+	hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(2.0) } retain];
 }
 
 __attribute__((unused))
@@ -604,8 +607,6 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &reloadPrefsNotification, CFSTR("me.devbug.SB3DTouchMenu.prefnoti"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 	loadSettings();
 	
-	
-	hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(1.0) } retain];
 	
 	//MSHookFunction(MGGetBoolAnswer, MSHake(MGGetBoolAnswer));
 	MSHookFunction(_AXSForceTouchEnabled, MSHake(_AXSForceTouchEnabled));
