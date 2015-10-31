@@ -4,6 +4,11 @@
 
 
 
+@interface UIInteractionProgress : NSObject
+@property (nonatomic, readonly) CGFloat percentComplete;
+@property (nonatomic, readonly) CGFloat velocity;
+@end
+
 @interface SBIconView : UIView
 @property(nonatomic, assign) id /*<SBIconViewDelegate>*/ delegate;
 @property(retain, nonatomic) UILongPressGestureRecognizer *shortcutMenuPeekGesture;
@@ -14,6 +19,7 @@
 
 @interface SBApplicationShortcutMenu : NSObject /*<SBIconViewDelegate>*/
 @property(nonatomic) NSUInteger presentState;
+@property(readonly, retain, nonatomic) UIInteractionProgress *interactionProgress;
 - (void)iconHandleLongPress:(id)arg1;
 @property(nonatomic, weak) SBIconView *iconView;
 @end

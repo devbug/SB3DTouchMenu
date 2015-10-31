@@ -41,7 +41,7 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 - (void)addGestureRecognizer:(UIGestureRecognizer *)toAddGesture {
 	if (toAddGesture != nil && toAddGesture == self.shortcutMenuPeekGesture) {
-		//self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
+		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
 		[toAddGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
 		[toAddGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
 	}
@@ -71,19 +71,48 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %end
 
+static BOOL touchEnded = NO;
+
+%hook SBApplicationShortcutMenu
+
+- (void)iconTapped:(id)gesture {
+	[self.iconView setHighlighted:NO];
+	
+	if (touchEnded && self.presentState == 3)
+		%orig;
+	
+	touchEnded = YES;
+}
+
+- (void)iconHandleLongPress:(id)gesture {
+	if (self.presentState != 2) {
+		if (touchEnded || (!touchEnded && MSHookIvar<CGFloat>(self, "_iconScaleFactor") == 1.0f))
+			%orig;
+	}
+}
+
+- (void)updateFromPressGestureRecognizer:(id)arg1 {
+//	%log;
+	%orig;
+}
+- (void)_updateBackgroundForBlurFraction:(double)arg1 {
+//	%log;
+	%orig;
+}
+- (void)_applyIconScaleTransformWithIconFactor:(double)arg1 contentFactor:(double)arg2 {
+//	%log;
+	%orig;
+}
+
+%end
+
 %hook SBIconController
 
 - (void)setPresentedShortcutMenu:(SBApplicationShortcutMenu *)menu {
-	//self.presentedShortcutMenu.iconView.delegate = self;
-	//menu.iconView.delegate = menu;
+	self.presentedShortcutMenu.iconView.delegate = self;
+	menu.iconView.delegate = menu;
+	touchEnded = NO;
 	
-	%orig;
-}
-
-- (void)applicationShortcutMenu:(SBApplicationShortcutMenu *)menu launchApplicationWithIconView:(SBIconView *)iconView {
-	%orig;
-}
-- (void)applicationShortcutMenu:(SBApplicationShortcutMenu *)menu startEditingForIconView:(SBIconView *)iconView {
 	%orig;
 }
 
