@@ -140,7 +140,6 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 - (void)_handleFirstHalfLongPressTimer:(id)timer {
 	if (SHORTCUT_ENABLED && [[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
-		// TODO: icon visual feedback
 		hapticFeedback();
 	}
 	
@@ -154,7 +153,6 @@ BOOL screenEdgeDisableOnKeyboard() {
 		return;
 	}
 	
-	// TODO: icon visual feedback
 	%orig;
 }
 
@@ -163,14 +161,8 @@ BOOL screenEdgeDisableOnKeyboard() {
 %hook SBIconController
 
 - (void)_handleShortcutMenuPeek:(UILongPressGestureRecognizer *)gesture {
-	if (SHORTCUT_ENABLED && (gesture.state == UIGestureRecognizerStateCancelled 
-			|| gesture.state == UIGestureRecognizerStateFailed 
-			|| gesture.state == UIGestureRecognizerStateRecognized))
-		;// TODO: icon visual feedback
-	
 	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"] 
 			&& gesture.state == UIGestureRecognizerStateBegan) {
-		// TODO: icon visual feedback
 		hapticFeedback();
 	}
 	
