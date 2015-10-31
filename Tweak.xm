@@ -41,7 +41,7 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 - (void)addGestureRecognizer:(UIGestureRecognizer *)toAddGesture {
 	if (toAddGesture != nil && toAddGesture == self.shortcutMenuPeekGesture) {
-		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
+		//self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
 		[toAddGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
 		[toAddGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
 	}
@@ -52,12 +52,39 @@ BOOL screenEdgeDisableOnKeyboard() {
 %new
 - (void)__sb3dtm_handleForceTouchGesture:(UILongPressGestureRecognizer *)gesture {
 	if (!SHORTCUT_ENABLED) return;
+	if ([[%c(SBIconController) sharedInstance] isEditing]) return;
+	
+	SBApplicationShortcutMenu *presentedShortcutMenu = [[%c(SBIconController) sharedInstance] presentedShortcutMenu];
+	// presentState
+	// 1 : 나올 준비가 됨 (아이콘에 표시 배경 생김)
+	// 2 : 나오는 중 (애니메이션)
+	// 3 : 나옴
+	// 4 : 문제 있는 상태 (정확히 모르겠음)
+	if (presentedShortcutMenu.presentState == 1) return;
 	
 	if (gesture.state == UIGestureRecognizerStateBegan) {
 		hapticFeedback();
 	}
 	
 	[[%c(SBIconController) sharedInstance] _handleShortcutMenuPeek:gesture];
+}
+
+%end
+
+%hook SBIconController
+
+- (void)setPresentedShortcutMenu:(SBApplicationShortcutMenu *)menu {
+	//self.presentedShortcutMenu.iconView.delegate = self;
+	//menu.iconView.delegate = menu;
+	
+	%orig;
+}
+
+- (void)applicationShortcutMenu:(SBApplicationShortcutMenu *)menu launchApplicationWithIconView:(SBIconView *)iconView {
+	%orig;
+}
+- (void)applicationShortcutMenu:(SBApplicationShortcutMenu *)menu startEditingForIconView:(SBIconView *)iconView {
+	%orig;
 }
 
 %end
@@ -81,7 +108,7 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %hook _UILinearForceLevelClassifier
 
-- (CGFloat)_calculateProgressOfTouchForceValue:(CGFloat)arg1 toForceLevel:(int)arg2 minimumRequiredForceLevel:(int)arg3 {
+- (CGFloat)_calculateProgressOfTouchForceValue:(CGFloat)force toForceLevel:(int)tolevel minimumRequiredForceLevel:(int)minlevel {
 	CGFloat rtn = %orig;
 	//%log(@(rtn));
 	return rtn;
@@ -96,7 +123,7 @@ BOOL screenEdgeDisableOnKeyboard() {
 }
 
 - (CGFloat)strongThreshold {
-	return 1.75f;
+	return 1.5f;
 }
 
 %end

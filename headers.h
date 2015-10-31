@@ -5,13 +5,18 @@
 
 
 @interface SBIconView : UIView
+@property(nonatomic, assign) id /*<SBIconViewDelegate>*/ delegate;
 @property(retain, nonatomic) UILongPressGestureRecognizer *shortcutMenuPeekGesture;
 - (void)cancelLongPressTimer;
 - (void)setHighlighted:(BOOL)arg1;
 - (BOOL)isHighlighted;
 @end
 
-@interface SBApplicationShortcutMenu : NSObject @end
+@interface SBApplicationShortcutMenu : NSObject /*<SBIconViewDelegate>*/
+@property(nonatomic) NSUInteger presentState;
+- (void)iconHandleLongPress:(id)arg1;
+@property(nonatomic, weak) SBIconView *iconView;
+@end
 
 @interface SBIconController
 + (id)sharedInstance;
