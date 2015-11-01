@@ -185,8 +185,11 @@ static BOOL longpressEnable = NO;
 	
 	UITouch *touch = [touches anyObject];
 	
-	CGFloat rtn = touch.majorRadius / 12.5f;
-	if (rtn <= 0.f) rtn = 90.0f / 12.5f;
+	CGFloat sensitivity = [[userDefaults objectForKey:@"ShortcutForceSensitivity"] floatValue];
+	if (sensitivity > 14.0f || sensitivity < 10.0f) sensitivity = 12.5f;
+	
+	CGFloat rtn = touch.majorRadius / sensitivity;
+	if (rtn <= 0.f) rtn = 90.0f / sensitivity;
 	
 	return rtn;
 }
@@ -605,6 +608,7 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 	[userDefaults registerDefaults:@{
 		@"Enabled" : @YES,
 		@"ShortcutEnabled" : @YES,
+		@"ShortcutForceSensitivity" : @(12.5),
 		@"ScreenEdgeEnabled" : @YES,
 		@"UseHaptic" : @YES,
 		@"HapticVibLength" : @(40),

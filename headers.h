@@ -66,7 +66,6 @@
 
 @interface UITouch (Private)
 @property (nonatomic, readonly) CGFloat majorRadius;
-@property (nonatomic, readonly) CGFloat majorRadiusTolerance;
 @end
 
 
