@@ -192,6 +192,12 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %hook SBIconController
 
+- (void)viewMap:(id)map configureIconView:(SBIconView *)iconView {
+	%orig;
+	
+	[iconView __sb3dtm_setGestures];
+}
+
 - (BOOL)iconShouldAllowTap:(SBIconView *)iconView {
 	if (SHORTCUT_ENABLED && self.presentedShortcutMenu != nil && !iconView.isHighlighted)
 		return NO;
