@@ -421,7 +421,6 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 // switcher flipping
 CGAffineTransform switcherTransform;
 CGAffineTransform switcherIconTitleTransform;
-CGAffineTransform switcherAppSuggestionTransform;
 UIRectEdge recognizedEdge = UIRectEdgeNone;
 
 %hook SBMainSwitcherViewController
@@ -431,34 +430,29 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	
 	if (switcherAutoFlipping()) {
 		recognizedEdge = gg.recognizedEdge;
-		switch (gg.recognizedEdge) {
+		switch (recognizedEdge) {
 			case UIRectEdgeTop:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				break;
 			case UIRectEdgeBottom:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				break;
 			case UIRectEdgeRight:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
 				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 				break;
 			case UIRectEdgeLeft:
 			default:
 				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 				switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
-				switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 				break;
 		}
 	}
 	else {
 		switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 		switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
-		switcherAppSuggestionTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
 	}
 }
 
@@ -471,6 +465,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	SBSwitcherContainerView *_contentView = MSHookIvar<SBSwitcherContainerView *>(self, "_contentView");
 	[_contentView release];
 	
+	recognizedEdge = UIRectEdgeNone;
 	[self loadView];
 	[self viewDidLoad];
 }
