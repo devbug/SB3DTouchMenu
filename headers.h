@@ -21,6 +21,27 @@
 - (BOOL)isEditing;
 @end
 
+@interface SBIconController (NEW)
+- (void)__sb3dtm_resetAllIconsGesture;
+@end
+@interface SBIconView (NEW)
+- (void)__sb3dtm_setGestures;
+- (UIGestureRecognizer *)__sb3dtm_menuGestureCanceller;
+- (void)__sb3dtm_setMenuGestureCanceller:(UIGestureRecognizer *)value;
+@end
+
+@interface SBIcon : NSObject @end
+@interface SBIconModel : NSObject
+- (id)_applicationIcons;
+- (id)iconsOfClass:(Class)arg1;
+- (id)leafIcons;
+@end
+@interface SBIconViewMap : NSObject
++ (id)homescreenMap;
+@property(readonly, retain, nonatomic) SBIconModel *iconModel;
+- (id)mappedIconViewForIcon:(id)arg1;
+@end
+
 @interface UIGestureRecognizer (Firmware90_Private)
 - (void)setRequiredPreviewForceState:(int)arg1;
 @end

@@ -97,26 +97,45 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %hook SBIconView 
 
-- (void)addGestureRecognizer:(UIGestureRecognizer *)toAddGesture {
-	if (toAddGesture != nil && toAddGesture == self.shortcutMenuPeekGesture) {
-		SB3DTMPeekDetectorForShortcutMenuGestureRecognizer *menuGestureCanceller = [[SB3DTMPeekDetectorForShortcutMenuGestureRecognizer alloc] initWithTarget:self action:@selector(__sb3dtm_handleLongPressGesture:)];
-		menuGestureCanceller.minimumPressDuration = 1.0f;
-		menuGestureCanceller.delaysTouchesEnded = NO;
-		menuGestureCanceller.cancelsTouchesInView = NO;
-		menuGestureCanceller.allowableMovement = 0.0f;
-		menuGestureCanceller.delegate = (id <UIGestureRecognizerDelegate>)self;
-		%orig(menuGestureCanceller);
+%new - (UIGestureRecognizer *)__sb3dtm_menuGestureCanceller {
+	return objc_getAssociatedObject(self, @selector(__sb3dtm_menuGestureCanceller));
+}
+%new - (void)__sb3dtm_setMenuGestureCanceller:(UIGestureRecognizer *)value {
+	objc_setAssociatedObject(self, @selector(__sb3dtm_menuGestureCanceller), value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+%new
+- (void)__sb3dtm_setGestures {
+	if (self.shortcutMenuPeekGesture) {
+		if (self.__sb3dtm_menuGestureCanceller == nil) {
+			SB3DTMPeekDetectorForShortcutMenuGestureRecognizer *menuGestureCanceller = [[SB3DTMPeekDetectorForShortcutMenuGestureRecognizer alloc] initWithTarget:self action:@selector(__sb3dtm_handleLongPressGesture:)];
+			menuGestureCanceller.minimumPressDuration = 1.0f;
+			menuGestureCanceller.delaysTouchesEnded = NO;
+			menuGestureCanceller.cancelsTouchesInView = NO;
+			menuGestureCanceller.allowableMovement = 0.0f;
+			menuGestureCanceller.delegate = (id <UIGestureRecognizerDelegate>)self;
+			
+			[self __sb3dtm_setMenuGestureCanceller:menuGestureCanceller];
+			
+			[self addGestureRecognizer:menuGestureCanceller];
+			
+			[menuGestureCanceller release];
+		}
 		
-		self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
-		[toAddGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
-		[toAddGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
-		[toAddGesture setRequiredPreviewForceState:0];
-		[toAddGesture requireGestureRecognizerToFail:menuGestureCanceller];
-		
-		[menuGestureCanceller release];
+		if (SHORTCUT_ENABLED) {
+			self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
+			[self.shortcutMenuPeekGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
+			[self.shortcutMenuPeekGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
+			[self.shortcutMenuPeekGesture setRequiredPreviewForceState:0];
+			[self.shortcutMenuPeekGesture requireGestureRecognizerToFail:self.__sb3dtm_menuGestureCanceller];
+		}
+		else {
+			self.shortcutMenuPeekGesture.minimumPressDuration = 0.1f;
+			[self.shortcutMenuPeekGesture removeTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
+			[self.shortcutMenuPeekGesture addTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
+			[self.shortcutMenuPeekGesture setRequiredPreviewForceState:1];
+		}
 	}
-	
-	%orig;
 }
 
 %new
@@ -126,8 +145,7 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %new
 - (void)__sb3dtm_handleForceTouchGesture:(UILongPressGestureRecognizer *)gesture {
-	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"] 
-			&& gesture.state == UIGestureRecognizerStateBegan) {
+	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"] && gesture.state == UIGestureRecognizerStateBegan) {
 		hapticFeedback();
 	}
 	
@@ -185,6 +203,17 @@ BOOL screenEdgeDisableOnKeyboard() {
 	%orig(iconView, SHORTCUT_ENABLED ? YES : imm);
 }
 
+%new
+- (void)__sb3dtm_resetAllIconsGesture {
+	SBIconViewMap *homescreenMap = [%c(SBIconViewMap) homescreenMap];
+	NSArray *icons = [[homescreenMap iconModel] leafIcons];
+	
+	for (SBIcon *icon in icons) {
+		SBIconView *iconView = [homescreenMap mappedIconViewForIcon:icon];
+		[iconView __sb3dtm_setGestures];
+	}
+}
+
 %end
 
 
@@ -237,7 +266,14 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		g = nil;
 	}
 	
+	NSMutableDictionary *_typeToGesture = MSHookIvar<NSMutableDictionary *>([%c(SBSystemGestureManager) mainDisplayManager], "_typeToGesture");
+	
 	if (!SCREENEDGE_ENABLED) {
+		if (nil != _typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)]) {
+			NSLog(@"[SB3DTouchMenu] ERROR! CANNOT add system default SwitcherForcePress gesture. SystemGesture already exists: %@", _typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)]);
+			return;
+		}
+		
 		%orig;
 		return;
 	}
@@ -257,6 +293,8 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	fg._needLongPressForTop = [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForBottom = [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithLongPress;
 	
+	if (nil != _typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)])
+		[[%c(SBSystemGestureManager) mainDisplayManager] removeGestureRecognizer:_typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)]];
 	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:fg withType:SBSystemGestureTypeSwitcherForcePress];
 	g = (SBSwitcherForcePressSystemGestureRecognizer *)fg;
 	gg = fg;
@@ -323,6 +361,9 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		g.delegate = self;
 	}
 	
+	NSMutableDictionary *_typeToGesture = MSHookIvar<NSMutableDictionary *>([%c(SBSystemGestureManager) mainDisplayManager], "_typeToGesture");
+	if (nil != _typeToGesture[@(SBSystemGestureTypeShowControlCenter)])
+		[[%c(SBSystemGestureManager) mainDisplayManager] removeGestureRecognizer:_typeToGesture[@(SBSystemGestureTypeShowControlCenter)]];
 	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:SBSystemGestureTypeShowControlCenter];
 }
 
@@ -367,6 +408,9 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		g.delegate = self;
 	}
 	
+	NSMutableDictionary *_typeToGesture = MSHookIvar<NSMutableDictionary *>([%c(SBSystemGestureManager) mainDisplayManager], "_typeToGesture");
+	if (nil != _typeToGesture[@(SBSystemGestureTypeShowNotificationCenter)])
+		[[%c(SBSystemGestureManager) mainDisplayManager] removeGestureRecognizer:_typeToGesture[@(SBSystemGestureTypeShowNotificationCenter)]];
 	[[%c(SBSystemGestureManager) mainDisplayManager] addGestureRecognizer:g withType:SBSystemGestureTypeShowNotificationCenter];
 }
 
@@ -553,6 +597,8 @@ void loadSettings() {
 	SBUIController *uic = [%c(SBUIController) sharedInstanceIfExists];
 	if (uic) {
 		[uic _addRemoveSwitcherGesture];
+		
+		[[%c(SBIconController) sharedInstance] __sb3dtm_resetAllIconsGesture];
 	}
 	
 	[hapticInfo release];
