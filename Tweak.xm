@@ -341,7 +341,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		g = nil;
 	}
 	
-	if ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithoutLongPress) {
+	if (SCREENEDGE_ENABLED && [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithoutLongPress) {
 		SB3DTMScreenEdgeLongPressPanGestureRecognizer *fg = [[%c(SB3DTMScreenEdgeLongPressPanGestureRecognizer) alloc] 
 																							initWithType:1 
 																					   systemGestureType:SBSystemGestureTypeShowControlCenter 
@@ -388,7 +388,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		g = nil;
 	}
 	
-	if ([userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithoutLongPress) {
+	if (SCREENEDGE_ENABLED && [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithoutLongPress) {
 		SB3DTMScreenEdgeLongPressPanGestureRecognizer *fg = [[%c(SB3DTMScreenEdgeLongPressPanGestureRecognizer) alloc] 
 																							initWithType:1 
 																					   systemGestureType:SBSystemGestureTypeShowNotificationCenter 
