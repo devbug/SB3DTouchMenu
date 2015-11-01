@@ -4,13 +4,22 @@
 
 
 
+@interface _UIForceLevelClassifier : NSObject @end
 @interface UIInteractionProgress : NSObject
 @property (nonatomic, readonly) CGFloat percentComplete;
 @property (nonatomic, readonly) CGFloat velocity;
 @end
+@interface UIPreviewForceInteractionProgress : UIInteractionProgress @end
+
+@interface _UITouchForceObservable : NSObject @end
+@interface _UITouchForceObservable (NEW)
+- (BOOL)__sb3dtm_needToEmulate;
+- (void)__sb3dtm_setNeedToEmulate:(BOOL)value;
+@end
 
 @interface SBIconView : UIView
 @property(nonatomic, assign) id /*<SBIconViewDelegate>*/ delegate;
+@property(retain, nonatomic) UIPreviewForceInteractionProgress *shortcutMenuPresentProgress;
 @property(retain, nonatomic) UILongPressGestureRecognizer *shortcutMenuPeekGesture;
 - (void)cancelLongPressTimer;
 - (void)setHighlighted:(BOOL)arg1;

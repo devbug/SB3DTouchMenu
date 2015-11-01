@@ -43,14 +43,24 @@ BOOL screenEdgeDisableOnKeyboard() {
 - (void)__sb3dtm_setGestures {
 	if (self.shortcutMenuPeekGesture) {
 		if (SHORTCUT_ENABLED) {
-			self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
+			self.shortcutMenuPeekGesture.minimumPressDuration = 0.2f;
 			[self.shortcutMenuPeekGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
 			[self.shortcutMenuPeekGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
+			
+			_UITouchForceObservable *_touchForceObservable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPeekGesture, "_touchForceObservable");
+			[_touchForceObservable __sb3dtm_setNeedToEmulate:YES];
+			_UITouchForceObservable *_observable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPresentProgress, "_observable");
+			[_observable __sb3dtm_setNeedToEmulate:YES];
 		}
 		else {
 			self.shortcutMenuPeekGesture.minimumPressDuration = 0.1f;
 			[self.shortcutMenuPeekGesture removeTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
 			[self.shortcutMenuPeekGesture addTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
+			
+			_UITouchForceObservable *_touchForceObservable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPeekGesture, "_touchForceObservable");
+			[_touchForceObservable __sb3dtm_setNeedToEmulate:NO];
+			_UITouchForceObservable *_observable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPresentProgress, "_observable");
+			[_observable __sb3dtm_setNeedToEmulate:NO];
 		}
 	}
 }
@@ -78,36 +88,39 @@ BOOL screenEdgeDisableOnKeyboard() {
 %end
 
 static BOOL touchEnded = NO;
+static BOOL longpressEnable = NO;
 
 %hook SBApplicationShortcutMenu
 
-- (void)iconTapped:(id)gesture {
+- (void)iconTouchBegan:(id)iconView {
+	%orig;
+	
+	if (self.presentState == 3)
+		longpressEnable = YES;
+}
+
+- (void)iconTapped:(id)iconView {
+	if (!SHORTCUT_ENABLED) {
+		%orig;
+		return;
+	}
+	
 	[self.iconView setHighlighted:NO];
 	
-	if (touchEnded && self.presentState == 3)
+	if (longpressEnable)
 		%orig;
 	
 	touchEnded = YES;
 }
 
-- (void)iconHandleLongPress:(id)gesture {
-	if (self.presentState != 2) {
-		if (touchEnded || (!touchEnded && MSHookIvar<CGFloat>(self, "_iconScaleFactor") == 1.0f))
-			%orig;
+- (void)iconHandleLongPress:(id)iconView {
+	if (!SHORTCUT_ENABLED) {
+		%orig;
+		return;
 	}
-}
-
-- (void)updateFromPressGestureRecognizer:(id)arg1 {
-//	%log;
-	%orig;
-}
-- (void)_updateBackgroundForBlurFraction:(double)arg1 {
-//	%log;
-	%orig;
-}
-- (void)_applyIconScaleTransformWithIconFactor:(double)arg1 contentFactor:(double)arg2 {
-//	%log;
-	%orig;
+	
+	if (longpressEnable || (self.presentState == 1 && !touchEnded && MSHookIvar<CGFloat>(self, "_iconScaleFactor") == 1.0f))
+		%orig;
 }
 
 %end
@@ -115,9 +128,12 @@ static BOOL touchEnded = NO;
 %hook SBIconController
 
 - (void)setPresentedShortcutMenu:(SBApplicationShortcutMenu *)menu {
-	self.presentedShortcutMenu.iconView.delegate = self;
-	menu.iconView.delegate = menu;
-	touchEnded = NO;
+	if (SHORTCUT_ENABLED) {
+		self.presentedShortcutMenu.iconView.delegate = self;
+		menu.iconView.delegate = menu;
+		touchEnded = NO;
+		longpressEnable = NO;
+	}
 	
 	%orig;
 }
@@ -143,39 +159,36 @@ static BOOL touchEnded = NO;
 
 %hook _UITouchForceObservable
 
-- (CGFloat)_maximumPossibleForceForTouches:(NSSet<UITouch *> *)touches {
-	return 10.0f;
+%new
+- (BOOL)__sb3dtm_needToEmulate {
+	return [objc_getAssociatedObject(self, @selector(__sb3dtm_needToEmulate)) boolValue];
+}
+%new
+- (void)__sb3dtm_setNeedToEmulate:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(__sb3dtm_needToEmulate), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (id)initWithView:(id)view {
+	self = %orig;
+	
+	if (self) {
+		[self __sb3dtm_setNeedToEmulate:NO];
+	}
+	
+	return self;
 }
 
 - (CGFloat)_unclampedTouchForceForTouches:(NSSet<UITouch *> *)touches {
+	if (!SHORTCUT_ENABLED) return %orig;
+	
+	if (self.__sb3dtm_needToEmulate == NO) return %orig;
+	
 	UITouch *touch = [touches anyObject];
 	
 	CGFloat rtn = touch.majorRadius / 12.5f;
 	if (rtn <= 0.f) rtn = 90.0f / 12.5f;
 	
 	return rtn;
-}
-
-%end
-
-%hook _UILinearForceLevelClassifier
-
-- (CGFloat)_calculateProgressOfTouchForceValue:(CGFloat)force toForceLevel:(int)tolevel minimumRequiredForceLevel:(int)minlevel {
-	CGFloat rtn = %orig;
-	//%log(@(rtn));
-	return rtn;
-}
-
-- (CGFloat)revealThreshold {
-	return 1.0f;
-}
-
-- (CGFloat)standardThreshold {
-	return 1.0f;
-}
-
-- (CGFloat)strongThreshold {
-	return 1.5f;
 }
 
 %end
