@@ -87,40 +87,52 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %end
 
-static BOOL touchEnded = NO;
-static BOOL longpressEnable = NO;
+static BOOL firstTouchEnded = NO;
+static BOOL touchAfterPresented = NO;
 
 %hook SBApplicationShortcutMenu
 
-- (void)iconTouchBegan:(id)iconView {
+- (void)iconTouchBegan:(SBIconView *)iconView {
 	%orig;
 	
-	if (self.presentState == 3)
-		longpressEnable = YES;
+	// presentState == 3
+	if ([self isPresented])
+		touchAfterPresented = YES;
 }
 
-- (void)iconTapped:(id)iconView {
+- (void)iconTapped:(SBIconView *)iconView {
 	if (!SHORTCUT_ENABLED) {
 		%orig;
 		return;
 	}
 	
-	[self.iconView setHighlighted:NO];
-	
-	if (longpressEnable)
+	if (touchAfterPresented)
 		%orig;
 	
-	touchEnded = YES;
+	[iconView setHighlighted:NO];
+	firstTouchEnded = YES;
 }
 
-- (void)iconHandleLongPress:(id)iconView {
+- (void)iconHandleLongPress:(SBIconView *)iconView {
 	if (!SHORTCUT_ENABLED) {
 		%orig;
 		return;
 	}
 	
-	if (longpressEnable || (self.presentState == 1 && !touchEnded && MSHookIvar<CGFloat>(self, "_iconScaleFactor") == 1.0f))
+	if (touchAfterPresented) {
+		[iconView setHighlighted:NO];
+		return;
+	}
+	
+	if (self.presentState == 1 && !firstTouchEnded && MSHookIvar<CGFloat>(self, "_iconScaleFactor") == 1.0f)
 		%orig;
+}
+
+- (BOOL)iconShouldAllowTap:(SBIconView *)iconView {
+	if (SHORTCUT_ENABLED && touchAfterPresented && !iconView.isHighlighted)
+		return NO;
+	
+	return %orig;
 }
 
 %end
@@ -131,8 +143,8 @@ static BOOL longpressEnable = NO;
 	if (SHORTCUT_ENABLED) {
 		self.presentedShortcutMenu.iconView.delegate = self;
 		menu.iconView.delegate = menu;
-		touchEnded = NO;
-		longpressEnable = NO;
+		firstTouchEnded = NO;
+		touchAfterPresented = NO;
 	}
 	
 	%orig;

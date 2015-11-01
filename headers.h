@@ -30,6 +30,7 @@
 @property(nonatomic) NSUInteger presentState;
 @property(readonly, retain, nonatomic) UIInteractionProgress *interactionProgress;
 - (void)iconHandleLongPress:(id)arg1;
+@property(readonly, nonatomic) BOOL isPresented;
 @property(nonatomic, weak) SBIconView *iconView;
 @end
 
