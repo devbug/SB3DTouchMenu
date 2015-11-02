@@ -462,18 +462,22 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	}
 }
 
-%new
 - (void)viewDidDisappear:(BOOL)animated {
-	for (UIView *v in self.view.subviews) {
-		[v removeFromSuperview];
-	}
-	[self.view removeFromSuperview];
-	SBSwitcherContainerView *_contentView = MSHookIvar<SBSwitcherContainerView *>(self, "_contentView");
-	[_contentView release];
+	%orig;
 	
 	recognizedEdge = UIRectEdgeNone;
-	[self loadView];
-	[self viewDidLoad];
+	
+	if (switcherAutoFlipping()) {
+		for (UIView *v in self.view.subviews) {
+			[v removeFromSuperview];
+		}
+		[self.view removeFromSuperview];
+		SBSwitcherContainerView *_contentView = MSHookIvar<SBSwitcherContainerView *>(self, "_contentView");
+		[_contentView release];
+		
+		[self loadView];
+		[self viewDidLoad];
+	}
 }
 
 %end
