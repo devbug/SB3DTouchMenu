@@ -195,7 +195,6 @@ extern BOOL screenEdgeEnabled();
 			&& self.state != UIGestureRecognizerStateFailed 
 			&& self.state != UIGestureRecognizerStateRecognized) {
 		self.firstface = YES;
-		//hapticFeedback();
 		
 		if (self.panning == NO) {
 			[self touchesBegan:self.startTouches withEvent:self.startEvent];

@@ -208,24 +208,17 @@ extern BOOL screenEdgeDisableOnKeyboard();
 	if ([view isKindOfClass:%c(UIKeyboard)]) return rtn;
 	
 	if (switcherAutoFlipping()) {
+		CGSize screenSize = [UIScreen mainScreen].bounds.size;
+		
 		switch (self.recognizedEdge) {
-			case UIRectEdgeRight: {
-					CGSize screenSize = [UIScreen mainScreen].bounds.size;
-					CGFloat x = screenSize.width - rtn.x;
-					rtn.x = x;
-				}
+			case UIRectEdgeRight:
+					rtn.x = screenSize.width - rtn.x;
 				break;
-			case UIRectEdgeBottom: {
-					CGSize screenSize = [UIScreen mainScreen].bounds.size;
-					CGFloat x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
-					rtn.x = x;
-				}
+			case UIRectEdgeBottom:
+					rtn.x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
 				break;
-			case UIRectEdgeTop: {
-					CGSize screenSize = [UIScreen mainScreen].bounds.size;
-					CGFloat x = rtn.y / screenSize.height * screenSize.width;
-					rtn.x = x;
-				}
+			case UIRectEdgeTop:
+					rtn.x = rtn.y / screenSize.height * screenSize.width;
 				break;
 		}
 	}
@@ -347,7 +340,6 @@ extern BOOL screenEdgeDisableOnKeyboard();
 			&& self.state != UIGestureRecognizerStateFailed 
 			&& self.state != UIGestureRecognizerStateRecognized) {
 		self.firstface = YES;
-		//hapticFeedback();
 		
 		if (self.panning == NO) {
 			[self touchesBegan:self.startTouches withEvent:self.startEvent];
@@ -392,8 +384,8 @@ extern BOOL screenEdgeDisableOnKeyboard();
 		UITouch *touch = [touches anyObject];
 		
 		CGPoint curPoint = [self _locationForTouch:touch];
-		CGFloat dx = fabs(self.startPoint.x - curPoint.x);
-		CGFloat dy = fabs(self.startPoint.y - curPoint.y);
+		CGFloat dx = ABS(self.startPoint.x - curPoint.x);
+		CGFloat dy = ABS(self.startPoint.y - curPoint.y);
 		CGFloat distance = sqrt(dx*dx + dy*dy);
 		
 		if (distance > self.allowableMovementForLongPress) {
