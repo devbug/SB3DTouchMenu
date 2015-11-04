@@ -47,6 +47,8 @@
 @end
 @interface SBIconView (NEW)
 - (void)__sb3dtm_setGestures;
+- (UIGestureRecognizer *)__sb3dtm_menuGestureCanceller;
+- (void)__sb3dtm_setMenuGestureCanceller:(UIGestureRecognizer *)value;
 @end
 
 @interface SBIcon : NSObject @end
