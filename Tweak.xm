@@ -3,7 +3,11 @@
 #import "SB3DTMSwitcherForceLongPressPanGestureRecognizer.h"
 
 
-extern "C" void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystemSoundID, id unknown, NSDictionary *options);
+extern "C" {
+	void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystemSoundID, id unknown, NSDictionary *options);
+	void FigVibratorInitialize(void);
+	void FigVibratorPlayVibrationWithDictionary(CFDictionaryRef dict, int a, int b, void *c, CFDictionaryRef d);
+}
 
 
 NSUserDefaults *userDefaults = nil;
@@ -20,8 +24,24 @@ enum {
 #define SCREENEDGES_		(UIRectEdge)(([userDefaults integerForKey:@"ScreenEdgeLeftInt"] != kScreenEdgeOff ? UIRectEdgeLeft : 0) | ([userDefaults integerForKey:@"ScreenEdgeRightInt"] != kScreenEdgeOff ? UIRectEdgeRight : 0) | ([userDefaults integerForKey:@"ScreenEdgeTopInt"] != kScreenEdgeOff ? UIRectEdgeTop : 0) | ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] != kScreenEdgeOff ? UIRectEdgeBottom : 0))
 
 static NSDictionary *hapticInfo = nil;
+static BOOL hapticInitialized = NO;
 
-#define hapticFeedback()	{ if (HAPTIC_ENABLED) AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo); }
+static void hapticFeedback() {
+	if (HAPTIC_ENABLED) {
+		if ([userDefaults boolForKey:@"ForcedHapticMode"]) {
+			if (!hapticInitialized) {
+				FigVibratorInitialize();
+				hapticInitialized = YES;
+			}
+			CGFloat duration = [[userDefaults objectForKey:@"HapticVibLength"] floatValue] / 1000.0f;
+			NSDictionary *tHapticInfo = @{ @"OnDuration" : @(0.0f), @"OffDuration" : @(duration), @"TotalDuration" : @(duration), @"Intensity" : @(2.0f) };
+			FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)tHapticInfo, 0, 0, NULL, nil);
+		}
+		else {
+			AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
+		}
+	}
+}
 
 
 BOOL screenEdgeEnabled() {
@@ -642,6 +662,7 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 		@"ScreenEdgeEnabled" : @YES,
 		@"UseHaptic" : @YES,
 		@"HapticVibLength" : @(40),
+		@"ForcedHapticMode" : @(NO),
 		@"ScreenEdgeLeftInt" : @(kScreenEdgeOnWithLongPress),
 		@"ScreenEdgeRightInt" : @(kScreenEdgeOff),
 		@"ScreenEdgeTopInt" : @(kScreenEdgeOff),

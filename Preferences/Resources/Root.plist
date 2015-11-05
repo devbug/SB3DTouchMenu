@@ -262,6 +262,20 @@
 		</dict>
 		<dict>
 			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>me.devbug.SB3DTouchMenu</string>
+			<key>key</key>
+			<string>ForcedHapticMode</string>
+			<key>label</key>
+			<string>Ignore system option</string>
+			<key>PostNotification</key>
+			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSSliderCell</string>
 			<key>default</key>
 			<integer>40</integer>
