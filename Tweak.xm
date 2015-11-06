@@ -475,6 +475,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 		SBSwitcherContainerView *_contentView = MSHookIvar<SBSwitcherContainerView *>(self, "_contentView");
 		[_contentView release];
 		
+		[self prepareForReuse];
 		[self loadView];
 		[self viewDidLoad];
 	}
