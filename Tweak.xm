@@ -6,7 +6,7 @@
 extern "C" {
 	void AudioServicesPlaySystemSoundWithVibration(SystemSoundID inSystemSoundID, id unknown, NSDictionary *options);
 	void FigVibratorInitialize(void);
-	void FigVibratorPlayVibrationWithDictionary(CFDictionaryRef dict, int a, int b, void *c);
+	void FigVibratorPlayVibrationWithDictionary(CFDictionaryRef dict, int a, int b, void *c, CFDictionaryRef d);
 }
 
 
@@ -34,8 +34,8 @@ static void hapticFeedback() {
 				hapticInitialized = YES;
 			}
 			CGFloat duration = [[userDefaults objectForKey:@"HapticVibLength"] floatValue] / 1000.0f;
-			NSDictionary *tHapticInfo = [NSDictionary dictionaryWithObjectsAndKeys:@(0.0f), @"OnDuration", @(duration), @"OffDuration", @(duration), @"TotalDuration", @(2.0f), @"Intensity", nil];
-			FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)tHapticInfo, 0, 0, NULL);
+			NSDictionary *tHapticInfo = @{ @"OnDuration" : @(0.0f), @"OffDuration" : @(duration), @"TotalDuration" : @(duration), @"Intensity" : @(2.0f) };
+			FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)tHapticInfo, 0, 0, NULL, nil);
 		}
 		else {
 			AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
