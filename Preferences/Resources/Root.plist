@@ -270,7 +270,7 @@
 			<key>max</key>
 			<integer>100</integer>
 			<key>showValue</key>
-			<true/>
+			<false/>
 			<key>key</key>
 			<string>HapticVibLength</string>
 			<key>label</key>
