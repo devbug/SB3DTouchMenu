@@ -28,7 +28,7 @@ static BOOL hapticInitialized = NO;
 
 static void hapticFeedback() {
 	if (HAPTIC_ENABLED) {
-		dispatch_async(dispatch_get_main_queue(), ^{
+		FBWorkspaceEvent *event = [FBWorkspaceEvent eventWithName:@"SB3DTouchMenuHapticNow" handler:^{
 			if ([userDefaults boolForKey:@"ForcedHapticMode"]) {
 				if (!hapticInitialized) {
 					FigVibratorInitialize();
@@ -39,7 +39,8 @@ static void hapticFeedback() {
 			else {
 				AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
 			}
-		});
+		}];
+		[[FBWorkspaceEventQueue sharedInstance] executeOrAppendEvent:event];
 	}
 }
 
