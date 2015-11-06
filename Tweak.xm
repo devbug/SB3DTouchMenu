@@ -30,16 +30,18 @@ static BOOL hapticInitialized = NO;
 
 static void hapticFeedback() {
 	if (HAPTIC_ENABLED) {
-		if ([userDefaults boolForKey:@"ForcedHapticMode"]) {
-			if (!hapticInitialized) {
-				FigVibratorInitialize();
-				hapticInitialized = YES;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			if ([userDefaults boolForKey:@"ForcedHapticMode"]) {
+				if (!hapticInitialized) {
+					FigVibratorInitialize();
+					hapticInitialized = YES;
+				}
+				FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)hapticInfo, 0, 0, NULL, nil);
 			}
-			FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)hapticInfo, 0, 0, NULL, nil);
-		}
-		else {
-			AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
-		}
+			else {
+				AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
+			}
+		});
 	}
 }
 
