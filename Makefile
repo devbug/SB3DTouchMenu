@@ -16,6 +16,7 @@ SB3DTouchMenu_FILES = Tweak.xm \
 					  SB3DTMSwitcherForceLongPressPanGestureRecognizer.xm \
 					  SB3DTMScreenEdgeLongPressPanGestureRecognizer.xm
 SB3DTouchMenu_FRAMEWORKS = UIKit AudioToolbox CoreMedia
+SB3DTouchMenu_PRIVATE_FRAMEWORKS = FrontBoard
 SB3DTouchMenu_LIBRARIES = Accessibility MobileGestalt
 
 include $(THEOS_MAKE_PATH)/tweak.mk
