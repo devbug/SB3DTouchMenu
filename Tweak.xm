@@ -33,9 +33,7 @@ static void hapticFeedback() {
 				FigVibratorInitialize();
 				hapticInitialized = YES;
 			}
-			CGFloat duration = [[userDefaults objectForKey:@"HapticVibLength"] floatValue] / 1000.0f;
-			NSDictionary *tHapticInfo = @{ @"OnDuration" : @(0.0f), @"OffDuration" : @(duration), @"TotalDuration" : @(duration), @"Intensity" : @(2.0f) };
-			FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)tHapticInfo, 0, 0, NULL, nil);
+			FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)hapticInfo, 0, 0, NULL, nil);
 		}
 		else {
 			AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
@@ -627,7 +625,13 @@ void loadSettings() {
 	}
 	
 	[hapticInfo release];
-	hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(2.0) } retain];
+	
+	if ([userDefaults boolForKey:@"ForcedHapticMode"]) {
+		CGFloat duration = [[userDefaults objectForKey:@"HapticVibLength"] floatValue] / 1000.0f;
+		hapticInfo = [@{ @"OnDuration" : @(0.0f), @"OffDuration" : @(duration), @"TotalDuration" : @(duration), @"Intensity" : @(2.0f) } retain];
+	}
+	else
+		hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(2.0) } retain];
 }
 
 __attribute__((unused))
