@@ -652,6 +652,11 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 - (void)applicationDidFinishLaunching:(id)application {
 	%orig;
 	
+	if (!hapticInitialized) {
+		FigVibratorInitialize();
+		hapticInitialized = YES;
+	}
+	
 	loadSettings();
 }
 
