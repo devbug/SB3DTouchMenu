@@ -4,14 +4,35 @@
 
 
 
+@interface _UIForceLevelClassifier : NSObject @end
+@interface UIInteractionProgress : NSObject
+@property (nonatomic, readonly) CGFloat percentComplete;
+@property (nonatomic, readonly) CGFloat velocity;
+@end
+@interface UIPreviewForceInteractionProgress : UIInteractionProgress @end
+
+@interface _UITouchForceObservable : NSObject @end
+@interface _UITouchForceObservable (NEW)
+- (BOOL)__sb3dtm_needToEmulate;
+- (void)__sb3dtm_setNeedToEmulate:(BOOL)value;
+@end
+
 @interface SBIconView : UIView
+@property(nonatomic, assign) id /*<SBIconViewDelegate>*/ delegate;
+@property(retain, nonatomic) UIPreviewForceInteractionProgress *shortcutMenuPresentProgress;
 @property(retain, nonatomic) UILongPressGestureRecognizer *shortcutMenuPeekGesture;
 - (void)cancelLongPressTimer;
 - (void)setHighlighted:(BOOL)arg1;
 - (BOOL)isHighlighted;
 @end
 
-@interface SBApplicationShortcutMenu : NSObject @end
+@interface SBApplicationShortcutMenu : NSObject /*<SBIconViewDelegate>*/
+@property(nonatomic) NSUInteger presentState;
+@property(readonly, retain, nonatomic) UIInteractionProgress *interactionProgress;
+- (void)iconHandleLongPress:(id)arg1;
+@property(readonly, nonatomic) BOOL isPresented;
+@property(nonatomic, weak) SBIconView *iconView;
+@end
 
 @interface SBIconController
 + (id)sharedInstance;
@@ -48,7 +69,6 @@
 
 @interface UITouch (Private)
 @property (nonatomic, readonly) CGFloat majorRadius;
-@property (nonatomic, readonly) CGFloat majorRadiusTolerance;
 @end
 
 

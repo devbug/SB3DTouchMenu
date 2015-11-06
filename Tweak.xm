@@ -22,6 +22,8 @@ enum {
 #define SCREENEDGE_ENABLED	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ScreenEdgeEnabled"])
 #define HAPTIC_ENABLED		([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"UseHaptic"])
 #define SCREENEDGES_		(UIRectEdge)(([userDefaults integerForKey:@"ScreenEdgeLeftInt"] != kScreenEdgeOff ? UIRectEdgeLeft : 0) | ([userDefaults integerForKey:@"ScreenEdgeRightInt"] != kScreenEdgeOff ? UIRectEdgeRight : 0) | ([userDefaults integerForKey:@"ScreenEdgeTopInt"] != kScreenEdgeOff ? UIRectEdgeTop : 0) | ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] != kScreenEdgeOff ? UIRectEdgeBottom : 0))
+#define SHORTCUT_TESTMODE	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ShortcutEnabled"] && [userDefaults boolForKey:@"ShortcutTestMode"])
+#define SHORTCUT_TESTMODE_S	([userDefaults boolForKey:@"ShortcutTestMode"])
 
 static NSDictionary *hapticInfo = nil;
 static BOOL hapticInitialized = NO;
@@ -82,7 +84,11 @@ BOOL screenEdgeDisableOnKeyboard() {
 		[super touchesBegan:touches withEvent:event];
 		return;
 	}
-	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"]) {
+	if (SHORTCUT_TESTMODE_S) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
+	}
+	if ([userDefaults boolForKey:@"ShortcutNoUseEditMode"]) {
 		self.state = UIGestureRecognizerStateFailed;
 		return;
 	}
@@ -140,18 +146,33 @@ BOOL screenEdgeDisableOnKeyboard() {
 			[menuGestureCanceller release];
 		}
 		
-		if (SHORTCUT_ENABLED) {
+		if (SHORTCUT_TESTMODE) {
+			self.shortcutMenuPeekGesture.minimumPressDuration = 0.2f;
+			[self.shortcutMenuPeekGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
+			[self.shortcutMenuPeekGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
+			
+			_UITouchForceObservable *_touchForceObservable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPeekGesture, "_touchForceObservable");
+			[_touchForceObservable __sb3dtm_setNeedToEmulate:YES];
+			_UITouchForceObservable *_observable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPresentProgress, "_observable");
+			[_observable __sb3dtm_setNeedToEmulate:YES];
+		}
+		else if (SHORTCUT_ENABLED) {
 			self.shortcutMenuPeekGesture.minimumPressDuration = 0.75f * 0.5f;
 			[self.shortcutMenuPeekGesture removeTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
 			[self.shortcutMenuPeekGesture addTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
 			[self.shortcutMenuPeekGesture setRequiredPreviewForceState:0];
 			[self.shortcutMenuPeekGesture requireGestureRecognizerToFail:self.__sb3dtm_menuGestureCanceller];
 		}
-		else {
+		if (!SHORTCUT_ENABLED) {
 			self.shortcutMenuPeekGesture.minimumPressDuration = 0.1f;
 			[self.shortcutMenuPeekGesture removeTarget:self action:@selector(__sb3dtm_handleForceTouchGesture:)];
 			[self.shortcutMenuPeekGesture addTarget:[%c(SBIconController) sharedInstance] action:@selector(_handleShortcutMenuPeek:)];
 			[self.shortcutMenuPeekGesture setRequiredPreviewForceState:1];
+			
+			_UITouchForceObservable *_touchForceObservable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPeekGesture, "_touchForceObservable");
+			[_touchForceObservable __sb3dtm_setNeedToEmulate:NO];
+			_UITouchForceObservable *_observable = MSHookIvar<_UITouchForceObservable *>(self.shortcutMenuPresentProgress, "_observable");
+			[_observable __sb3dtm_setNeedToEmulate:NO];
 		}
 	}
 }
@@ -163,11 +184,27 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %new
 - (void)__sb3dtm_handleForceTouchGesture:(UILongPressGestureRecognizer *)gesture {
-	if (SHORTCUT_ENABLED && [userDefaults boolForKey:@"ShortcutNoUseEditMode"] && gesture.state == UIGestureRecognizerStateBegan) {
-		hapticFeedback();
-	}
-	
 	if (!SHORTCUT_ENABLED) return;
+	if ([[%c(SBIconController) sharedInstance] isEditing]) return;
+	
+	SBApplicationShortcutMenu *presentedShortcutMenu = [[%c(SBIconController) sharedInstance] presentedShortcutMenu];
+	// presentState
+	// 1 : 나올 준비가 됨 (아이콘에 표시 배경 생김)
+	// 2 : 나오는 중 (애니메이션)
+	// 3 : 나옴
+	// 4 : 문제 있는 상태 (정확히 모르겠음)
+	if (presentedShortcutMenu.presentState == 1) return;
+	
+	if (SHORTCUT_TESTMODE_S) {
+		if (gesture.state == UIGestureRecognizerStateBegan) {
+			hapticFeedback();
+		}
+	}
+	else {
+		if ([userDefaults boolForKey:@"ShortcutNoUseEditMode"] && gesture.state == UIGestureRecognizerStateBegan) {
+			hapticFeedback();
+		}
+	}
 	
 	[[%c(SBIconController) sharedInstance] _handleShortcutMenuPeek:gesture];
 }
@@ -182,14 +219,14 @@ BOOL screenEdgeDisableOnKeyboard() {
 }
 
 - (BOOL)_delegateTapAllowed {
-	if (SHORTCUT_ENABLED && [[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil && !self.isHighlighted)
+	if (SHORTCUT_ENABLED && !SHORTCUT_TESTMODE_S && [[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil && !self.isHighlighted)
 		return NO;
 	
 	return %orig;
 }
 
 - (void)_handleFirstHalfLongPressTimer:(id)timer {
-	if (SHORTCUT_ENABLED && [[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
+	if (SHORTCUT_ENABLED && !SHORTCUT_TESTMODE_S && [[%c(SBIconController) sharedInstance] _canRevealShortcutMenu]) {
 		hapticFeedback();
 	}
 	
@@ -197,7 +234,7 @@ BOOL screenEdgeDisableOnKeyboard() {
 }
 
 - (void)_handleSecondHalfLongPressTimer:(id)timer {
-	if (SHORTCUT_ENABLED && [[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil) {
+	if (SHORTCUT_ENABLED && !SHORTCUT_TESTMODE_S && [[%c(SBIconController) sharedInstance] presentedShortcutMenu] != nil) {
 		[self cancelLongPressTimer];
 		[self setHighlighted:NO];
 		return;
@@ -208,7 +245,68 @@ BOOL screenEdgeDisableOnKeyboard() {
 
 %end
 
+static BOOL firstTouchEnded = NO;
+static BOOL touchAfterPresented = NO;
+
+%hook SBApplicationShortcutMenu
+
+- (void)iconTouchBegan:(SBIconView *)iconView {
+	%orig;
+	
+	// presentState == 3
+	if ([self isPresented])
+		touchAfterPresented = YES;
+}
+
+- (void)iconTapped:(SBIconView *)iconView {
+	if (!SHORTCUT_ENABLED) {
+		%orig;
+		return;
+	}
+	
+	if (touchAfterPresented)
+		%orig;
+	
+	[iconView setHighlighted:NO];
+	firstTouchEnded = YES;
+}
+
+- (void)iconHandleLongPress:(SBIconView *)iconView {
+	if (!SHORTCUT_ENABLED) {
+		%orig;
+		return;
+	}
+	
+	if (touchAfterPresented) {
+		[iconView setHighlighted:NO];
+		return;
+	}
+	
+	if (self.presentState == 1 && !firstTouchEnded && MSHookIvar<CGFloat>(self, "_iconScaleFactor") == 1.0f)
+		%orig;
+}
+
+- (BOOL)iconShouldAllowTap:(SBIconView *)iconView {
+	if (SHORTCUT_ENABLED && touchAfterPresented && !iconView.isHighlighted)
+		return NO;
+	
+	return %orig;
+}
+
+%end
+
 %hook SBIconController
+
+- (void)setPresentedShortcutMenu:(SBApplicationShortcutMenu *)menu {
+	if (SHORTCUT_TESTMODE) {
+		self.presentedShortcutMenu.iconView.delegate = self;
+		menu.iconView.delegate = menu;
+		firstTouchEnded = NO;
+		touchAfterPresented = NO;
+	}
+	
+	%orig;
+}
 
 - (void)viewMap:(id)map configureIconView:(SBIconView *)iconView {
 	%orig;
@@ -217,14 +315,14 @@ BOOL screenEdgeDisableOnKeyboard() {
 }
 
 - (BOOL)iconShouldAllowTap:(SBIconView *)iconView {
-	if (SHORTCUT_ENABLED && self.presentedShortcutMenu != nil && !iconView.isHighlighted)
+	if (SHORTCUT_ENABLED && !SHORTCUT_TESTMODE_S && self.presentedShortcutMenu != nil && !iconView.isHighlighted)
 		return NO;
 	
 	return %orig;
 }
 
 - (void)_revealMenuForIconView:(SBIconView *)iconView presentImmediately:(BOOL)imm {
-	%orig(iconView, SHORTCUT_ENABLED ? YES : imm);
+	%orig(iconView, SHORTCUT_ENABLED && !SHORTCUT_TESTMODE_S ? YES : imm);
 }
 
 %new
@@ -236,6 +334,46 @@ BOOL screenEdgeDisableOnKeyboard() {
 		SBIconView *iconView = [homescreenMap mappedIconViewForIcon:icon];
 		[iconView __sb3dtm_setGestures];
 	}
+}
+
+%end
+
+%hook _UITouchForceObservable
+
+%new
+- (BOOL)__sb3dtm_needToEmulate {
+	return [objc_getAssociatedObject(self, @selector(__sb3dtm_needToEmulate)) boolValue];
+}
+%new
+- (void)__sb3dtm_setNeedToEmulate:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(__sb3dtm_needToEmulate), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (id)initWithView:(id)view {
+	self = %orig;
+	
+	if (self) {
+		[self __sb3dtm_setNeedToEmulate:NO];
+	}
+	
+	return self;
+}
+
+- (CGFloat)_unclampedTouchForceForTouches:(NSSet<UITouch *> *)touches {
+	if (!SHORTCUT_ENABLED) return %orig;
+	if (!SHORTCUT_TESTMODE_S) return %orig;
+	
+	if (self.__sb3dtm_needToEmulate == NO) return %orig;
+	
+	UITouch *touch = [touches anyObject];
+	
+	CGFloat sensitivity = [[userDefaults objectForKey:@"ShortcutForceSensitivity"] floatValue];
+	if (sensitivity > 14.0f || sensitivity < 10.0f) sensitivity = 12.5f;
+	
+	CGFloat rtn = touch.majorRadius / sensitivity;
+	if (rtn <= 0.f) rtn = 90.0f / sensitivity;
+	
+	return rtn;
 }
 
 %end
@@ -663,6 +801,8 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 		@"Enabled" : @YES,
 		@"ShortcutEnabled" : @YES,
 		@"ShortcutNoUseEditMode" : @NO,
+		@"ShortcutTestMode" : @NO,
+		@"ShortcutForceSensitivity" : @(12.5),
 		@"ScreenEdgeEnabled" : @YES,
 		@"UseHaptic" : @YES,
 		@"HapticVibLength" : @(40),
