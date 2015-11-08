@@ -4,7 +4,7 @@ SDKVERSION = 9.0
 TARGET_IPHONEOS_DEPLOYMENT_VERSION = 9.0
 SYSROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS9.0.sdk
 
-PACKAGE_VERSION = 1.2.3
+PACKAGE_VERSION = 1.2.3pre
 
 include $(THEOS)/makefiles/common.mk
 
@@ -15,7 +15,8 @@ TWEAK_NAME = SB3DTouchMenu
 SB3DTouchMenu_FILES = Tweak.xm \
 					  SB3DTMSwitcherForceLongPressPanGestureRecognizer.xm \
 					  SB3DTMScreenEdgeLongPressPanGestureRecognizer.xm
-SB3DTouchMenu_FRAMEWORKS = UIKit AudioToolbox
+SB3DTouchMenu_FRAMEWORKS = UIKit AudioToolbox CoreMedia
+SB3DTouchMenu_PRIVATE_FRAMEWORKS = FrontBoard
 SB3DTouchMenu_LIBRARIES = Accessibility MobileGestalt
 
 include $(THEOS_MAKE_PATH)/tweak.mk

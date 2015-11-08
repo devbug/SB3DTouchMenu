@@ -186,3 +186,24 @@ typedef NS_ENUM(NSUInteger, SBSystemGestureType) {
 @interface SBBestAppSuggestion : NSObject @end
 @interface SBSwitcherAppSuggestionViewController : UIViewController @end
 
+
+@interface BSEventQueueEvent : NSObject
++ (id)eventWithName:(NSString *)name handler:(void(^)(void))handler;
+- (void)executeFromEventQueue;
+- (void)execute;
+@end
+@interface FBWorkspaceEvent : BSEventQueueEvent
+- (void)execute;
+@end
+@interface BSEventQueue : NSObject
+@property(retain, nonatomic) BSEventQueueEvent *executingEvent;
+- (BOOL)hasEventWithName:(id)arg1;
+- (BOOL)hasEventWithPrefix:(id)arg1;
+- (void)cancelEventsWithName:(id)arg1;
+@end
+@interface FBWorkspaceEventQueue : BSEventQueue
++ (id)sharedInstance;
+- (void)executeOrPrependEvent:(id)arg1;
+- (void)executeOrAppendEvent:(id)arg1;
+@end
+
