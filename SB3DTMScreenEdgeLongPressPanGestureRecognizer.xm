@@ -3,9 +3,6 @@
 
 
 
-extern BOOL screenEdgeEnabled();
-
-
 %subclass SB3DTMScreenEdgeLongPressPanGestureRecognizer : SBScreenEdgePanGestureRecognizer
 
 %new
@@ -141,8 +138,6 @@ extern BOOL screenEdgeEnabled();
 
 %new
 - (BOOL)_isNoRequriedLongPress {
-	if (!screenEdgeEnabled()) return NO;
-	
 	if (self.systemGestureType != SBSystemGestureTypeSwitcherForcePress) {
 		if ([[%c(SBUIController) sharedInstanceIfExists] isAppSwitcherShowing])
 			return YES;
@@ -155,11 +150,6 @@ extern BOOL screenEdgeEnabled();
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	if (!screenEdgeEnabled()) {
-		self.state = UIGestureRecognizerStateFailed;
-		return;
-	}
-	
 	self.startTouches = [touches copy];
 	self.startEvent = [event retain];
 	
