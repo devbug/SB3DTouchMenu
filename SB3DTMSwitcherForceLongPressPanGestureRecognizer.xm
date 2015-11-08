@@ -5,7 +5,6 @@
 
 extern BOOL screenEdgeEnabled();
 extern BOOL switcherAutoFlipping();
-extern BOOL screenEdgeDisableOnKeyboard();
 
 
 %subclass SB3DTMSwitcherForceLongPressPanGestureRecognizer : SBSwitcherForcePressSystemGestureRecognizer
@@ -32,6 +31,7 @@ extern BOOL screenEdgeDisableOnKeyboard();
 		self.recognizedEdge = UIRectEdgeNone;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
+		self.ignoreKeyboard = NO;
 	}
 	
 	return self;
@@ -62,6 +62,7 @@ extern BOOL screenEdgeDisableOnKeyboard();
 		self.recognizedEdge = UIRectEdgeNone;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
+		self.ignoreKeyboard = NO;
 	}
 	
 	return self;
@@ -112,6 +113,9 @@ extern BOOL screenEdgeDisableOnKeyboard();
 %new - (SBSystemGestureType)systemGestureType {
 	return [objc_getAssociatedObject(self, @selector(systemGestureType)) unsignedLongLongValue];
 }
+%new - (BOOL)ignoreKeyboard {
+	return [objc_getAssociatedObject(self, @selector(ignoreKeyboard)) boolValue];
+}
 
 %new - (void)setMinimumPressDurationForLongPress:(CFTimeInterval)value {
 	objc_setAssociatedObject(self, @selector(minimumPressDurationForLongPress), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -157,6 +161,9 @@ extern BOOL screenEdgeDisableOnKeyboard();
 }
 %new - (void)setSystemGestureType:(SBSystemGestureType)value {
 	objc_setAssociatedObject(self, @selector(systemGestureType), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+%new - (void)setIgnoreKeyboard:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(ignoreKeyboard), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (void)reset {
@@ -245,7 +252,7 @@ extern BOOL screenEdgeDisableOnKeyboard();
 	CGSize screenSize = [UIScreen mainScreen].bounds.size;
 	CGPoint location = [self _locationForTouch:touch];
 	
-	if (screenEdgeDisableOnKeyboard() && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
+	if (self.ignoreKeyboard && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
 		CGRect frame = [%c(UIPeripheralHost) visiblePeripheralFrame];
 		if (CGRectContainsPoint(frame, location)) {
 			self.state = UIGestureRecognizerStateFailed;

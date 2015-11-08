@@ -20,6 +20,7 @@
 @property (nonatomic) BOOL _needLongPressForTop;
 @property (nonatomic) BOOL _needLongPressForBottom;
 @property (nonatomic) SBSystemGestureType systemGestureType;
+@property (nonatomic) BOOL ignoreKeyboard;
 
 - (id)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType;
 - (id)initWithType:(int)type systemGestureType:(SBSystemGestureType)gsType target:(id)target action:(SEL)action;

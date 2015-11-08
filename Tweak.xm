@@ -53,10 +53,6 @@ BOOL switcherAutoFlipping() {
 	return [userDefaults boolForKey:@"SwitcherAutoFlipping"];
 }
 
-BOOL screenEdgeDisableOnKeyboard() {
-	return [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
-}
-
 
 @interface SB3DTMPeekDetectorForShortcutMenuGestureRecognizer : UILongPressGestureRecognizer
 @property (nonatomic, readonly) CGFloat startMajorRadius;
@@ -319,6 +315,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	fg._needLongPressForRight = [userDefaults integerForKey:@"ScreenEdgeRightInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForTop = [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForBottom = [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithLongPress;
+	fg.ignoreKeyboard = [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
 	
 	if (nil != _typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)])
 		[[%c(SBSystemGestureManager) mainDisplayManager] removeGestureRecognizer:_typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)]];
@@ -379,6 +376,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		fg.maximumNumberOfTouches = 1;
 		[fg _setEdgeRegionSize:20.0f];
 		fg.edges = UIRectEdgeBottom;
+		fg.ignoreKeyboard = YES;
 		
 		g = (SBScreenEdgePanGestureRecognizer *)fg;
 	}
