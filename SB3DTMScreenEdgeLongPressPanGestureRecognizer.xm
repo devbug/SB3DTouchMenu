@@ -3,9 +3,6 @@
 
 
 
-extern BOOL screenEdgeEnabled();
-
-
 %subclass SB3DTMScreenEdgeLongPressPanGestureRecognizer : SBScreenEdgePanGestureRecognizer
 
 %new
@@ -25,6 +22,7 @@ extern BOOL screenEdgeEnabled();
 		self.startEvent = nil;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
+		self.ignoreKeyboard = NO;
 	}
 	
 	return self;
@@ -50,6 +48,7 @@ extern BOOL screenEdgeEnabled();
 		self.startEvent = nil;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
+		self.ignoreKeyboard = NO;
 	}
 	
 	return self;
@@ -85,6 +84,9 @@ extern BOOL screenEdgeEnabled();
 %new - (SBSystemGestureType)systemGestureType {
 	return [objc_getAssociatedObject(self, @selector(systemGestureType)) unsignedLongLongValue];
 }
+%new - (BOOL)ignoreKeyboard {
+	return [objc_getAssociatedObject(self, @selector(ignoreKeyboard)) boolValue];
+}
 
 %new - (void)setMinimumPressDurationForLongPress:(CFTimeInterval)value {
 	objc_setAssociatedObject(self, @selector(minimumPressDurationForLongPress), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -116,6 +118,9 @@ extern BOOL screenEdgeEnabled();
 %new - (void)setSystemGestureType:(SBSystemGestureType)value {
 	objc_setAssociatedObject(self, @selector(systemGestureType), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
+%new - (void)setIgnoreKeyboard:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(ignoreKeyboard), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 - (void)reset {
 	%orig;
@@ -133,8 +138,6 @@ extern BOOL screenEdgeEnabled();
 
 %new
 - (BOOL)_isNoRequriedLongPress {
-	if (!screenEdgeEnabled()) return NO;
-	
 	if (self.systemGestureType != SBSystemGestureTypeSwitcherForcePress) {
 		if ([[%c(SBUIController) sharedInstanceIfExists] isAppSwitcherShowing])
 			return YES;
@@ -147,17 +150,17 @@ extern BOOL screenEdgeEnabled();
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	if (!screenEdgeEnabled()) {
-		self.state = UIGestureRecognizerStateFailed;
-		return;
-	}
-	
 	self.startTouches = [touches copy];
 	self.startEvent = [event retain];
 	
 	UITouch *touch = [touches anyObject];
 
 	if ([touch tapCount] != 1) {
+		self.state = UIGestureRecognizerStateFailed;
+		return;
+	}
+	
+	if (self.ignoreKeyboard && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
 		self.state = UIGestureRecognizerStateFailed;
 		return;
 	}

@@ -18,10 +18,11 @@ enum {
 	kScreenEdgeOnWithLongPress
 };
 
-#define SHORTCUT_ENABLED	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ShortcutEnabled"])
-#define SCREENEDGE_ENABLED	([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ScreenEdgeEnabled"])
-#define HAPTIC_ENABLED		([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"UseHaptic"])
-#define SCREENEDGES_		(UIRectEdge)(([userDefaults integerForKey:@"ScreenEdgeLeftInt"] != kScreenEdgeOff ? UIRectEdgeLeft : 0) | ([userDefaults integerForKey:@"ScreenEdgeRightInt"] != kScreenEdgeOff ? UIRectEdgeRight : 0) | ([userDefaults integerForKey:@"ScreenEdgeTopInt"] != kScreenEdgeOff ? UIRectEdgeTop : 0) | ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] != kScreenEdgeOff ? UIRectEdgeBottom : 0))
+#define SHORTCUT_ENABLED			([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ShortcutEnabled"])
+#define SCREENEDGE_ENABLED			([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ScreenEdgeEnabled"])
+#define HAPTIC_ENABLED				([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"UseHaptic"])
+#define SCREENEDGES_				(UIRectEdge)(([userDefaults integerForKey:@"ScreenEdgeLeftInt"] != kScreenEdgeOff ? UIRectEdgeLeft : 0) | ([userDefaults integerForKey:@"ScreenEdgeRightInt"] != kScreenEdgeOff ? UIRectEdgeRight : 0) | ([userDefaults integerForKey:@"ScreenEdgeTopInt"] != kScreenEdgeOff ? UIRectEdgeTop : 0) | ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] != kScreenEdgeOff ? UIRectEdgeBottom : 0))
+#define AUTOFLIPPING_ENABLED		([userDefaults boolForKey:@"SwitcherAutoFlipping"])
 
 static NSDictionary *hapticInfo = nil;
 static BOOL hapticInitialized = NO;
@@ -42,19 +43,6 @@ static void hapticFeedback() {
 		}];
 		[[FBWorkspaceEventQueue sharedInstance] executeOrAppendEvent:event];
 	}
-}
-
-
-BOOL screenEdgeEnabled() {
-	return SCREENEDGE_ENABLED;
-}
-
-BOOL switcherAutoFlipping() {
-	return [userDefaults boolForKey:@"SwitcherAutoFlipping"];
-}
-
-BOOL screenEdgeDisableOnKeyboard() {
-	return [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
 }
 
 
@@ -319,6 +307,8 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	fg._needLongPressForRight = [userDefaults integerForKey:@"ScreenEdgeRightInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForTop = [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForBottom = [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithLongPress;
+	fg.ignoreKeyboard = [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
+	fg.touchPointMaze = AUTOFLIPPING_ENABLED;
 	
 	if (nil != _typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)])
 		[[%c(SBSystemGestureManager) mainDisplayManager] removeGestureRecognizer:_typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)]];
@@ -379,6 +369,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		fg.maximumNumberOfTouches = 1;
 		[fg _setEdgeRegionSize:20.0f];
 		fg.edges = UIRectEdgeBottom;
+		fg.ignoreKeyboard = YES;
 		
 		g = (SBScreenEdgePanGestureRecognizer *)fg;
 	}
@@ -455,7 +446,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)viewWillAppear:(BOOL)animated {
 	%orig;
 	
-	if (switcherAutoFlipping()) {
+	if (AUTOFLIPPING_ENABLED) {
 		recognizedEdge = gg.recognizedEdge;
 		switch (recognizedEdge) {
 			case UIRectEdgeTop:
@@ -488,7 +479,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	
 	recognizedEdge = UIRectEdgeNone;
 	
-	if (switcherAutoFlipping()) {
+	if (AUTOFLIPPING_ENABLED) {
 		for (UIView *v in self.view.subviews) {
 			[v removeFromSuperview];
 		}
@@ -528,7 +519,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)layoutSubviews {
 	%orig;
 	
-	if (switcherAutoFlipping()) {
+	if (AUTOFLIPPING_ENABLED) {
 		SBOrientationTransformWrapperView *_appViewLayoutWrapper = MSHookIvar<SBOrientationTransformWrapperView *>(self, "_appViewLayoutWrapper");
 		CGRect frame = _appViewLayoutWrapper.frame;
 		switch (recognizedEdge) {
@@ -563,7 +554,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 %hook SBSwitcherAppSuggestionViewController
 
 - (CGRect)_presentedRectForContentView {
-	if (switcherAutoFlipping() && recognizedEdge != UIRectEdgeNone) {
+	if (AUTOFLIPPING_ENABLED && recognizedEdge != UIRectEdgeNone) {
 		CGRect rtn = [[UIScreen mainScreen] bounds];
 		rtn.origin.x = self.view.bounds.origin.x;
 		rtn.origin.y = self.view.bounds.origin.y;
@@ -574,7 +565,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 }
 
 - (NSUInteger)_bottomBannerStyle {
-	if (switcherAutoFlipping()) {
+	if (AUTOFLIPPING_ENABLED) {
 		switch (recognizedEdge) {
 			case UIRectEdgeTop:
 			case UIRectEdgeBottom:

@@ -3,11 +3,6 @@
 
 
 
-extern BOOL screenEdgeEnabled();
-extern BOOL switcherAutoFlipping();
-extern BOOL screenEdgeDisableOnKeyboard();
-
-
 %subclass SB3DTMSwitcherForceLongPressPanGestureRecognizer : SBSwitcherForcePressSystemGestureRecognizer
 
 %new
@@ -32,6 +27,8 @@ extern BOOL screenEdgeDisableOnKeyboard();
 		self.recognizedEdge = UIRectEdgeNone;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
+		self.ignoreKeyboard = NO;
+		self.touchPointMaze = NO;
 	}
 	
 	return self;
@@ -62,6 +59,8 @@ extern BOOL screenEdgeDisableOnKeyboard();
 		self.recognizedEdge = UIRectEdgeNone;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
+		self.ignoreKeyboard = NO;
+		self.touchPointMaze = NO;
 	}
 	
 	return self;
@@ -112,6 +111,12 @@ extern BOOL screenEdgeDisableOnKeyboard();
 %new - (SBSystemGestureType)systemGestureType {
 	return [objc_getAssociatedObject(self, @selector(systemGestureType)) unsignedLongLongValue];
 }
+%new - (BOOL)ignoreKeyboard {
+	return [objc_getAssociatedObject(self, @selector(ignoreKeyboard)) boolValue];
+}
+%new - (BOOL)touchPointMaze {
+	return [objc_getAssociatedObject(self, @selector(touchPointMaze)) boolValue];
+}
 
 %new - (void)setMinimumPressDurationForLongPress:(CFTimeInterval)value {
 	objc_setAssociatedObject(self, @selector(minimumPressDurationForLongPress), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -158,6 +163,12 @@ extern BOOL screenEdgeDisableOnKeyboard();
 %new - (void)setSystemGestureType:(SBSystemGestureType)value {
 	objc_setAssociatedObject(self, @selector(systemGestureType), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
+%new - (void)setIgnoreKeyboard:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(ignoreKeyboard), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+%new - (void)setTouchPointMaze:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(touchPointMaze), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 - (void)reset {
 	%orig;
@@ -176,8 +187,6 @@ extern BOOL screenEdgeDisableOnKeyboard();
 
 %new
 - (BOOL)_isNoRequriedLongPress {
-	if (!screenEdgeEnabled()) return NO;
-	
 	if (self.systemGestureType != SBSystemGestureTypeSwitcherForcePress) {
 		if ([[%c(SBUIController) sharedInstanceIfExists] isAppSwitcherShowing])
 			return YES;
@@ -207,7 +216,7 @@ extern BOOL screenEdgeDisableOnKeyboard();
 	
 	if ([view isKindOfClass:%c(UIKeyboard)]) return rtn;
 	
-	if (switcherAutoFlipping()) {
+	if (self.touchPointMaze) {
 		CGSize screenSize = [UIScreen mainScreen].bounds.size;
 		
 		switch (self.recognizedEdge) {
@@ -227,11 +236,6 @@ extern BOOL screenEdgeDisableOnKeyboard();
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-	if (!screenEdgeEnabled()) {
-		self.state = UIGestureRecognizerStateFailed;
-		return;
-	}
-	
 	self.startTouches = [touches copy];
 	self.startEvent = [event retain];
 	
@@ -245,7 +249,7 @@ extern BOOL screenEdgeDisableOnKeyboard();
 	CGSize screenSize = [UIScreen mainScreen].bounds.size;
 	CGPoint location = [self _locationForTouch:touch];
 	
-	if (screenEdgeDisableOnKeyboard() && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
+	if (self.ignoreKeyboard && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
 		CGRect frame = [%c(UIPeripheralHost) visiblePeripheralFrame];
 		if (CGRectContainsPoint(frame, location)) {
 			self.state = UIGestureRecognizerStateFailed;
