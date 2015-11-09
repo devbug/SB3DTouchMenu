@@ -242,8 +242,8 @@
 		UITouch *touch = [touches anyObject];
 		
 		CGPoint curPoint = [self _locationForTouch:touch];
-		CGFloat dx = fabs(self.startPoint.x - curPoint.x);
-		CGFloat dy = fabs(self.startPoint.y - curPoint.y);
+		CGFloat dx = ABS(self.startPoint.x - curPoint.x);
+		CGFloat dy = ABS(self.startPoint.y - curPoint.y);
 		CGFloat distance = sqrt(dx*dx + dy*dy);
 		
 		if (distance > self.allowableMovementForLongPress) {
