@@ -219,16 +219,31 @@
 	if (self.touchPointMaze) {
 		CGSize screenSize = [UIScreen mainScreen].bounds.size;
 		
-		switch (self.recognizedEdge) {
-			case UIRectEdgeRight:
-				rtn.x = screenSize.width - rtn.x;
-				break;
-			case UIRectEdgeBottom:
-				rtn.x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
-				break;
-			case UIRectEdgeTop:
-				rtn.x = rtn.y / screenSize.height * screenSize.width;
-				break;
+		if ([[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionLeftToRight) {
+			switch (self.recognizedEdge) {
+				case UIRectEdgeRight:
+					rtn.x = screenSize.width - rtn.x;
+					break;
+				case UIRectEdgeBottom:
+					rtn.x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
+					break;
+				case UIRectEdgeTop:
+					rtn.x = rtn.y / screenSize.height * screenSize.width;
+					break;
+			}
+		}
+		else {
+			switch (self.recognizedEdge) {
+				case UIRectEdgeLeft:
+					rtn.x = screenSize.width - rtn.x;
+					break;
+				case UIRectEdgeTop:
+					rtn.x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
+					break;
+				case UIRectEdgeBottom:
+					rtn.x = rtn.y / screenSize.height * screenSize.width;
+					break;
+			}
 		}
 	}
 	

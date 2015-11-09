@@ -446,31 +446,61 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)viewWillAppear:(BOOL)animated {
 	%orig;
 	
-	if (AUTOFLIPPING_ENABLED) {
-		recognizedEdge = gg.recognizedEdge;
-		switch (recognizedEdge) {
-			case UIRectEdgeTop:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				break;
-			case UIRectEdgeBottom:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				break;
-			case UIRectEdgeRight:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				break;
-			case UIRectEdgeLeft:
-			default:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
-				break;
+	if ([[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionLeftToRight) {
+		if (AUTOFLIPPING_ENABLED) {
+			recognizedEdge = gg.recognizedEdge;
+			switch (recognizedEdge) {
+				case UIRectEdgeTop:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeBottom:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeRight:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeLeft:
+				default:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+					break;
+			}
+		}
+		else {
+			switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+			switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
 		}
 	}
 	else {
-		switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-		switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+		if (AUTOFLIPPING_ENABLED) {
+			recognizedEdge = gg.recognizedEdge;
+			switch (recognizedEdge) {
+				case UIRectEdgeTop:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeBottom:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeRight:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+					break;
+				case UIRectEdgeLeft:
+				default:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+			}
+		}
+		else {
+			switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+			switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+		}
 	}
 }
 
@@ -521,19 +551,38 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	if (AUTOFLIPPING_ENABLED) {
 		SBOrientationTransformWrapperView *_appViewLayoutWrapper = MSHookIvar<SBOrientationTransformWrapperView *>(self, "_appViewLayoutWrapper");
 		CGRect frame = _appViewLayoutWrapper.frame;
-		switch (recognizedEdge) {
-			case UIRectEdgeTop:
-				self.clipsToBounds = NO;
-				frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
-				frame.origin.y = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
-				_appViewLayoutWrapper.frame = frame;
-				break;
-			case UIRectEdgeBottom:
-				self.clipsToBounds = NO;
-				frame.origin.x = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
-				frame.origin.y -= (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
-				_appViewLayoutWrapper.frame = frame;
-				break;
+		
+		if ([[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionLeftToRight) {
+			switch (recognizedEdge) {
+				case UIRectEdgeTop:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+				case UIRectEdgeBottom:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y -= (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+			}
+		}
+		else {
+			switch (recognizedEdge) {
+				case UIRectEdgeBottom:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+				case UIRectEdgeTop:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y -= (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+			}
 		}
 	}
 }
