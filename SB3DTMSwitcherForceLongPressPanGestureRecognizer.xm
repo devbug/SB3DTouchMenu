@@ -221,13 +221,13 @@
 		
 		switch (self.recognizedEdge) {
 			case UIRectEdgeRight:
-					rtn.x = screenSize.width - rtn.x;
+				rtn.x = screenSize.width - rtn.x;
 				break;
 			case UIRectEdgeBottom:
-					rtn.x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
+				rtn.x = (screenSize.height - rtn.y) / screenSize.height * screenSize.width;
 				break;
 			case UIRectEdgeTop:
-					rtn.x = rtn.y / screenSize.height * screenSize.width;
+				rtn.x = rtn.y / screenSize.height * screenSize.width;
 				break;
 		}
 	}
