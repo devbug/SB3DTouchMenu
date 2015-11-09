@@ -22,6 +22,7 @@
 @property (nonatomic) SBSystemGestureType systemGestureType;
 @property (nonatomic) BOOL ignoreKeyboard;
 @property (nonatomic) BOOL touchPointMaze;
+@property (nonatomic) BOOL shouldReverseDirection;
 
 - (id)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType;
 - (id)initWithType:(int)type systemGestureType:(SBSystemGestureType)gsType target:(id)target action:(SEL)action;

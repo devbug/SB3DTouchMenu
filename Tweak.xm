@@ -26,6 +26,7 @@ enum {
 
 static NSDictionary *hapticInfo = nil;
 static BOOL hapticInitialized = NO;
+static BOOL g_shouldReverseDirection = NO;
 
 static void hapticFeedback() {
 	if (HAPTIC_ENABLED) {
@@ -309,6 +310,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	fg._needLongPressForBottom = [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithLongPress;
 	fg.ignoreKeyboard = [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
 	fg.touchPointMaze = AUTOFLIPPING_ENABLED;
+	fg.shouldReverseDirection = g_shouldReverseDirection;
 	
 	if (nil != _typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)])
 		[[%c(SBSystemGestureManager) mainDisplayManager] removeGestureRecognizer:_typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)]];
@@ -446,7 +448,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)viewWillAppear:(BOOL)animated {
 	%orig;
 	
-	if ([[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionLeftToRight) {
+	if (!g_shouldReverseDirection) {
 		if (AUTOFLIPPING_ENABLED) {
 			recognizedEdge = gg.recognizedEdge;
 			switch (recognizedEdge) {
@@ -552,7 +554,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 		SBOrientationTransformWrapperView *_appViewLayoutWrapper = MSHookIvar<SBOrientationTransformWrapperView *>(self, "_appViewLayoutWrapper");
 		CGRect frame = _appViewLayoutWrapper.frame;
 		
-		if ([[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionLeftToRight) {
+		if (!g_shouldReverseDirection) {
 			switch (recognizedEdge) {
 				case UIRectEdgeTop:
 					self.clipsToBounds = NO;
@@ -661,6 +663,8 @@ void loadSettings() {
 	
 	SBUIController *uic = [%c(SBUIController) sharedInstanceIfExists];
 	if (uic) {
+		g_shouldReverseDirection = [[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionRightToLeft;
+		
 		[uic _addRemoveSwitcherGesture];
 		
 		[[%c(SBIconController) sharedInstance] __sb3dtm_resetAllIconsGesture];

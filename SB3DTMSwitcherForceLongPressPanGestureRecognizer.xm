@@ -29,6 +29,7 @@
 		[self _setHysteresis:0.0];
 		self.ignoreKeyboard = NO;
 		self.touchPointMaze = NO;
+		self.shouldReverseDirection = NO;
 	}
 	
 	return self;
@@ -61,6 +62,7 @@
 		[self _setHysteresis:0.0];
 		self.ignoreKeyboard = NO;
 		self.touchPointMaze = NO;
+		self.shouldReverseDirection = NO;
 	}
 	
 	return self;
@@ -117,6 +119,9 @@
 %new - (BOOL)touchPointMaze {
 	return [objc_getAssociatedObject(self, @selector(touchPointMaze)) boolValue];
 }
+%new - (BOOL)shouldReverseDirection {
+	return [objc_getAssociatedObject(self, @selector(shouldReverseDirection)) boolValue];
+}
 
 %new - (void)setMinimumPressDurationForLongPress:(CFTimeInterval)value {
 	objc_setAssociatedObject(self, @selector(minimumPressDurationForLongPress), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -169,6 +174,9 @@
 %new - (void)setTouchPointMaze:(BOOL)value {
 	objc_setAssociatedObject(self, @selector(touchPointMaze), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
+%new - (void)setShouldReverseDirection:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(shouldReverseDirection), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 - (void)reset {
 	%orig;
@@ -219,7 +227,7 @@
 	if (self.touchPointMaze) {
 		CGSize screenSize = [UIScreen mainScreen].bounds.size;
 		
-		if ([[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionLeftToRight) {
+		if (!self.shouldReverseDirection) {
 			switch (self.recognizedEdge) {
 				case UIRectEdgeRight:
 					rtn.x = screenSize.width - rtn.x;
