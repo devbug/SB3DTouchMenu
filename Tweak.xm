@@ -24,22 +24,22 @@ enum {
 #define SCREENEDGES_				(UIRectEdge)(([userDefaults integerForKey:@"ScreenEdgeLeftInt"] != kScreenEdgeOff ? UIRectEdgeLeft : 0) | ([userDefaults integerForKey:@"ScreenEdgeRightInt"] != kScreenEdgeOff ? UIRectEdgeRight : 0) | ([userDefaults integerForKey:@"ScreenEdgeTopInt"] != kScreenEdgeOff ? UIRectEdgeTop : 0) | ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] != kScreenEdgeOff ? UIRectEdgeBottom : 0))
 #define AUTOFLIPPING_ENABLED		(SCREENEDGE_ENABLED && [userDefaults boolForKey:@"SwitcherAutoFlipping"])
 
-static NSDictionary *hapticInfo = nil;
-static BOOL hapticInitialized = NO;
+static NSDictionary *g_hapticInfo = nil;
+static BOOL g_hapticInitialized = NO;
 static BOOL g_shouldReverseDirection = NO;
 
 static void hapticFeedback() {
 	if (HAPTIC_ENABLED) {
 		FBWorkspaceEvent *event = [FBWorkspaceEvent eventWithName:@"SB3DTouchMenuHapticNow" handler:^{
 			if ([userDefaults boolForKey:@"ForcedHapticMode"]) {
-				if (!hapticInitialized) {
+				if (!g_hapticInitialized) {
 					FigVibratorInitialize();
-					hapticInitialized = YES;
+					g_hapticInitialized = YES;
 				}
-				FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)hapticInfo, 0, 0, NULL, nil);
+				FigVibratorPlayVibrationWithDictionary((CFDictionaryRef)g_hapticInfo, 0, 0, NULL, nil);
 			}
 			else {
-				AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, hapticInfo);
+				AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, g_hapticInfo);
 			}
 		}];
 		[[FBWorkspaceEventQueue sharedInstance] executeOrAppendEvent:event];
@@ -439,9 +439,9 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 
 
 // switcher flipping
-CGAffineTransform switcherTransform;
-CGAffineTransform switcherIconTitleTransform;
-UIRectEdge recognizedEdge = UIRectEdgeNone;
+CGAffineTransform g_switcherTransform;
+CGAffineTransform g_switcherIconTitleTransform;
+UIRectEdge g_recognizedEdge = UIRectEdgeNone;
 
 %hook SBMainSwitcherViewController
 
@@ -449,61 +449,61 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	%orig;
 	
 	if (AUTOFLIPPING_ENABLED) {
-		recognizedEdge = gg.recognizedEdge;
+		g_recognizedEdge = gg.recognizedEdge;
 		
 		if (!g_shouldReverseDirection) {
-			switch (recognizedEdge) {
+			switch (g_recognizedEdge) {
 				case UIRectEdgeTop:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
 					break;
 				case UIRectEdgeBottom:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
 					break;
 				case UIRectEdgeRight:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
 					break;
 				case UIRectEdgeLeft:
 				default:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
 					break;
 			}
 		}
 		else {
-			switch (recognizedEdge) {
+			switch (g_recognizedEdge) {
 				case UIRectEdgeBottom:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
 					break;
 				case UIRectEdgeTop:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
 					break;
 				case UIRectEdgeLeft:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
 					break;
 				case UIRectEdgeRight:
 				default:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+					g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+					g_switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
 					break;
 			}
 		}
 	}
 	else {
-		switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-		switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+		g_switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+		g_switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
 	}
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
 	%orig;
 	
-	recognizedEdge = UIRectEdgeNone;
+	g_recognizedEdge = UIRectEdgeNone;
 	
 	for (UIView *v in self.view.subviews) {
 		[v removeFromSuperview];
@@ -524,7 +524,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)layoutSubviews {
 	%orig;
 	
-	self.transform = switcherTransform;
+	self.transform = g_switcherTransform;
 }
 
 %end
@@ -534,7 +534,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)layoutSubviews {
 	%orig;
 	
-	self.transform = switcherTransform;
+	self.transform = g_switcherTransform;
 }
 
 %end
@@ -549,7 +549,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 		CGRect frame = _appViewLayoutWrapper.frame;
 		
 		if (!g_shouldReverseDirection) {
-			switch (recognizedEdge) {
+			switch (g_recognizedEdge) {
 				case UIRectEdgeTop:
 					self.clipsToBounds = NO;
 					frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
@@ -565,7 +565,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 			}
 		}
 		else {
-			switch (recognizedEdge) {
+			switch (g_recognizedEdge) {
 				case UIRectEdgeBottom:
 					self.clipsToBounds = NO;
 					frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
@@ -590,7 +590,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)layoutSubviews {
 	%orig;
 	
-	self.transform = switcherIconTitleTransform;
+	self.transform = g_switcherIconTitleTransform;
 }
 
 %end
@@ -598,7 +598,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 %hook SBSwitcherAppSuggestionViewController
 
 - (CGRect)_presentedRectForContentView {
-	if (AUTOFLIPPING_ENABLED && recognizedEdge != UIRectEdgeNone) {
+	if (AUTOFLIPPING_ENABLED && g_recognizedEdge != UIRectEdgeNone) {
 		CGRect rtn = [[UIScreen mainScreen] bounds];
 		rtn.origin.x = self.view.bounds.origin.x;
 		rtn.origin.y = self.view.bounds.origin.y;
@@ -610,7 +610,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 
 - (NSUInteger)_bottomBannerStyle {
 	if (AUTOFLIPPING_ENABLED) {
-		switch (recognizedEdge) {
+		switch (g_recognizedEdge) {
 			case UIRectEdgeTop:
 			case UIRectEdgeBottom:
 				return 0;
@@ -627,7 +627,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)layoutSubviews {
 	%orig;
 	
-	self.transform = switcherTransform;
+	self.transform = g_switcherTransform;
 }
 
 %end
@@ -638,7 +638,7 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	%orig;
 	
 	UILabel *_iconTitle = MSHookIvar<UILabel *>(self, "_iconTitle");
-	_iconTitle.transform = switcherIconTitleTransform;
+	_iconTitle.transform = g_switcherIconTitleTransform;
 }
 
 %end
@@ -664,14 +664,14 @@ void loadSettings() {
 		[[%c(SBIconController) sharedInstance] __sb3dtm_resetAllIconsGesture];
 	}
 	
-	[hapticInfo release];
+	[g_hapticInfo release];
 	
 	if ([userDefaults boolForKey:@"ForcedHapticMode"]) {
 		CGFloat duration = [[userDefaults objectForKey:@"HapticVibLength"] floatValue] / 1000.0f;
-		hapticInfo = [@{ @"OnDuration" : @(0.0f), @"OffDuration" : @(duration), @"TotalDuration" : @(duration), @"Intensity" : @(2.0f) } retain];
+		g_hapticInfo = [@{ @"OnDuration" : @(0.0f), @"OffDuration" : @(duration), @"TotalDuration" : @(duration), @"Intensity" : @(2.0f) } retain];
 	}
 	else
-		hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(2.0) } retain];
+		g_hapticInfo = [@{ @"VibePattern" : @[ @(YES), [userDefaults objectForKey:@"HapticVibLength"] ], @"Intensity" : @(2.0) } retain];
 }
 
 __attribute__((unused))
@@ -689,9 +689,9 @@ static void reloadPrefsNotification(CFNotificationCenterRef center,
 - (void)applicationDidFinishLaunching:(id)application {
 	%orig;
 	
-	if (!hapticInitialized) {
+	if (!g_hapticInitialized) {
 		FigVibratorInitialize();
-		hapticInitialized = YES;
+		g_hapticInitialized = YES;
 	}
 	
 	loadSettings();
