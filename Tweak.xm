@@ -448,9 +448,10 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 - (void)viewWillAppear:(BOOL)animated {
 	%orig;
 	
-	if (!g_shouldReverseDirection) {
-		if (AUTOFLIPPING_ENABLED) {
-			recognizedEdge = gg.recognizedEdge;
+	if (AUTOFLIPPING_ENABLED) {
+		recognizedEdge = gg.recognizedEdge;
+		
+		if (!g_shouldReverseDirection) {
 			switch (recognizedEdge) {
 				case UIRectEdgeTop:
 					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
@@ -472,37 +473,30 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 			}
 		}
 		else {
-			switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-			switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+			switch (recognizedEdge) {
+				case UIRectEdgeBottom:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeTop:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeLeft:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeRight:
+				default:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+					break;
+			}
 		}
 	}
 	else {
-		if (AUTOFLIPPING_ENABLED) {
-			recognizedEdge = gg.recognizedEdge;
-			switch (recognizedEdge) {
-				case UIRectEdgeTop:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-					break;
-				case UIRectEdgeBottom:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-					break;
-				case UIRectEdgeRight:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
-					break;
-				case UIRectEdgeLeft:
-				default:
-					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
-					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-					break;
-			}
-		}
-		else {
-			switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
-			switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-		}
+		switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+		switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
 	}
 }
 
