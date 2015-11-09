@@ -26,6 +26,7 @@ enum {
 
 static NSDictionary *hapticInfo = nil;
 static BOOL hapticInitialized = NO;
+static BOOL g_shouldReverseDirection = NO;
 
 static void hapticFeedback() {
 	if (HAPTIC_ENABLED) {
@@ -309,6 +310,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	fg._needLongPressForBottom = [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithLongPress;
 	fg.ignoreKeyboard = [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
 	fg.touchPointMaze = AUTOFLIPPING_ENABLED;
+	fg.shouldReverseDirection = g_shouldReverseDirection;
 	
 	if (nil != _typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)])
 		[[%c(SBSystemGestureManager) mainDisplayManager] removeGestureRecognizer:_typeToGesture[@(SBSystemGestureTypeSwitcherForcePress)]];
@@ -448,24 +450,48 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	
 	if (AUTOFLIPPING_ENABLED) {
 		recognizedEdge = gg.recognizedEdge;
-		switch (recognizedEdge) {
-			case UIRectEdgeTop:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				break;
-			case UIRectEdgeBottom:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				break;
-			case UIRectEdgeRight:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
-				break;
-			case UIRectEdgeLeft:
-			default:
-				switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
-				switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
-				break;
+		
+		if (!g_shouldReverseDirection) {
+			switch (recognizedEdge) {
+				case UIRectEdgeTop:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeBottom:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeRight:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeLeft:
+				default:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+					break;
+			}
+		}
+		else {
+			switch (recognizedEdge) {
+				case UIRectEdgeBottom:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeTop:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(M_PI + M_PI_2), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeLeft:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(-1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(-1.0f, 1.0f);
+					break;
+				case UIRectEdgeRight:
+				default:
+					switcherTransform = CGAffineTransformConcat(CGAffineTransformMakeRotation(0.0f), CGAffineTransformMakeScale(1.0f, 1.0f));
+					switcherIconTitleTransform = CGAffineTransformMakeScale(1.0f, 1.0f);
+					break;
+			}
 		}
 	}
 	else {
@@ -521,19 +547,38 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	if (AUTOFLIPPING_ENABLED) {
 		SBOrientationTransformWrapperView *_appViewLayoutWrapper = MSHookIvar<SBOrientationTransformWrapperView *>(self, "_appViewLayoutWrapper");
 		CGRect frame = _appViewLayoutWrapper.frame;
-		switch (recognizedEdge) {
-			case UIRectEdgeTop:
-				self.clipsToBounds = NO;
-				frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
-				frame.origin.y = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
-				_appViewLayoutWrapper.frame = frame;
-				break;
-			case UIRectEdgeBottom:
-				self.clipsToBounds = NO;
-				frame.origin.x = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
-				frame.origin.y -= (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
-				_appViewLayoutWrapper.frame = frame;
-				break;
+		
+		if (!g_shouldReverseDirection) {
+			switch (recognizedEdge) {
+				case UIRectEdgeTop:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+				case UIRectEdgeBottom:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y -= (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+			}
+		}
+		else {
+			switch (recognizedEdge) {
+				case UIRectEdgeBottom:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MIN(frame.size.width, frame.size.height) / 2.0f) - (MAX(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+				case UIRectEdgeTop:
+					self.clipsToBounds = NO;
+					frame.origin.x = (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					frame.origin.y -= (MAX(frame.size.width, frame.size.height) / 2.0f) - (MIN(frame.size.width, frame.size.height) / 2.0f);
+					_appViewLayoutWrapper.frame = frame;
+					break;
+			}
 		}
 	}
 }
@@ -612,6 +657,8 @@ void loadSettings() {
 	
 	SBUIController *uic = [%c(SBUIController) sharedInstanceIfExists];
 	if (uic) {
+		g_shouldReverseDirection = [[UIApplication sharedApplication] userInterfaceLayoutDirection] == UIUserInterfaceLayoutDirectionRightToLeft;
+		
 		[uic _addRemoveSwitcherGesture];
 		
 		[[%c(SBIconController) sharedInstance] __sb3dtm_resetAllIconsGesture];
