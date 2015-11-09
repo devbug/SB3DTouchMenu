@@ -22,7 +22,7 @@ enum {
 #define SCREENEDGE_ENABLED			([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"ScreenEdgeEnabled"])
 #define HAPTIC_ENABLED				([userDefaults boolForKey:@"Enabled"] && [userDefaults boolForKey:@"UseHaptic"])
 #define SCREENEDGES_				(UIRectEdge)(([userDefaults integerForKey:@"ScreenEdgeLeftInt"] != kScreenEdgeOff ? UIRectEdgeLeft : 0) | ([userDefaults integerForKey:@"ScreenEdgeRightInt"] != kScreenEdgeOff ? UIRectEdgeRight : 0) | ([userDefaults integerForKey:@"ScreenEdgeTopInt"] != kScreenEdgeOff ? UIRectEdgeTop : 0) | ([userDefaults integerForKey:@"ScreenEdgeBottomInt"] != kScreenEdgeOff ? UIRectEdgeBottom : 0))
-#define AUTOFLIPPING_ENABLED		([userDefaults boolForKey:@"SwitcherAutoFlipping"])
+#define AUTOFLIPPING_ENABLED		(SCREENEDGE_ENABLED && [userDefaults boolForKey:@"SwitcherAutoFlipping"])
 
 static NSDictionary *hapticInfo = nil;
 static BOOL hapticInitialized = NO;
