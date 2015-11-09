@@ -479,17 +479,15 @@ UIRectEdge recognizedEdge = UIRectEdgeNone;
 	
 	recognizedEdge = UIRectEdgeNone;
 	
-	if (AUTOFLIPPING_ENABLED) {
-		for (UIView *v in self.view.subviews) {
-			[v removeFromSuperview];
-		}
-		[self.view removeFromSuperview];
-		SBSwitcherContainerView *_contentView = MSHookIvar<SBSwitcherContainerView *>(self, "_contentView");
-		[_contentView release];
-		
-		[self loadView];
-		[self viewDidLoad];
+	for (UIView *v in self.view.subviews) {
+		[v removeFromSuperview];
 	}
+	[self.view removeFromSuperview];
+	SBSwitcherContainerView *_contentView = MSHookIvar<SBSwitcherContainerView *>(self, "_contentView");
+	[_contentView release];
+	
+	[self loadView];
+	[self viewDidLoad];
 }
 
 %end
