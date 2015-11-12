@@ -14,7 +14,7 @@
 @property (nonatomic, copy) NSSet<UITouch *> *startTouches;
 @property (nonatomic, retain) UIEvent *startEvent;
 @property (nonatomic) SBSystemGestureType systemGestureType;
-@property (nonatomic) BOOL ignoreKeyboard;
+@property (nonatomic) BOOL disableOnKeyboard;
 
 - (id)initWithTarget:(id)target action:(SEL)action systemGestureType:(SBSystemGestureType)gsType;
 - (id)initWithType:(int)type systemGestureType:(SBSystemGestureType)gsType target:(id)target action:(SEL)action;

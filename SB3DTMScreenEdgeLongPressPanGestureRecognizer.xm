@@ -22,7 +22,7 @@
 		self.startEvent = nil;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
-		self.ignoreKeyboard = NO;
+		self.disableOnKeyboard = NO;
 	}
 	
 	return self;
@@ -48,7 +48,7 @@
 		self.startEvent = nil;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
-		self.ignoreKeyboard = NO;
+		self.disableOnKeyboard = NO;
 	}
 	
 	return self;
@@ -84,8 +84,8 @@
 %new - (SBSystemGestureType)systemGestureType {
 	return [objc_getAssociatedObject(self, @selector(systemGestureType)) unsignedLongLongValue];
 }
-%new - (BOOL)ignoreKeyboard {
-	return [objc_getAssociatedObject(self, @selector(ignoreKeyboard)) boolValue];
+%new - (BOOL)disableOnKeyboard {
+	return [objc_getAssociatedObject(self, @selector(disableOnKeyboard)) boolValue];
 }
 
 %new - (void)setMinimumPressDurationForLongPress:(CFTimeInterval)value {
@@ -118,8 +118,8 @@
 %new - (void)setSystemGestureType:(SBSystemGestureType)value {
 	objc_setAssociatedObject(self, @selector(systemGestureType), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
-%new - (void)setIgnoreKeyboard:(BOOL)value {
-	objc_setAssociatedObject(self, @selector(ignoreKeyboard), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+%new - (void)setDisableOnKeyboard:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(disableOnKeyboard), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (void)reset {
@@ -160,7 +160,7 @@
 		return;
 	}
 	
-	if (self.ignoreKeyboard && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
+	if (self.disableOnKeyboard && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
 		self.state = UIGestureRecognizerStateFailed;
 		return;
 	}

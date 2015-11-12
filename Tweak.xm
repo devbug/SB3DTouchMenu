@@ -308,7 +308,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	fg._needLongPressForRight = [userDefaults integerForKey:@"ScreenEdgeRightInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForTop = [userDefaults integerForKey:@"ScreenEdgeTopInt"] == kScreenEdgeOnWithLongPress;
 	fg._needLongPressForBottom = [userDefaults integerForKey:@"ScreenEdgeBottomInt"] == kScreenEdgeOnWithLongPress;
-	fg.ignoreKeyboard = [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
+	fg.disableOnKeyboard = [userDefaults boolForKey:@"ScreenEdgeDisableOnKeyboard"];
 	fg.touchPointMaze = AUTOFLIPPING_ENABLED;
 	fg.shouldReverseDirection = g_shouldReverseDirection;
 	
@@ -371,7 +371,7 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 		fg.maximumNumberOfTouches = 1;
 		[fg _setEdgeRegionSize:20.0f];
 		fg.edges = UIRectEdgeBottom;
-		fg.ignoreKeyboard = YES;
+		fg.disableOnKeyboard = YES;
 		
 		g = (SBScreenEdgePanGestureRecognizer *)fg;
 	}

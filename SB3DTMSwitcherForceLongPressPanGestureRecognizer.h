@@ -20,7 +20,7 @@
 @property (nonatomic) BOOL _needLongPressForTop;
 @property (nonatomic) BOOL _needLongPressForBottom;
 @property (nonatomic) SBSystemGestureType systemGestureType;
-@property (nonatomic) BOOL ignoreKeyboard;
+@property (nonatomic) BOOL disableOnKeyboard;
 @property (nonatomic) BOOL touchPointMaze;
 @property (nonatomic) BOOL shouldReverseDirection;
 

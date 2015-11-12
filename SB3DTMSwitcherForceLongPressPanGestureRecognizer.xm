@@ -27,7 +27,7 @@
 		self.recognizedEdge = UIRectEdgeNone;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
-		self.ignoreKeyboard = NO;
+		self.disableOnKeyboard = NO;
 		self.touchPointMaze = NO;
 		self.shouldReverseDirection = NO;
 	}
@@ -60,7 +60,7 @@
 		self.recognizedEdge = UIRectEdgeNone;
 		self.systemGestureType = gsType;
 		[self _setHysteresis:0.0];
-		self.ignoreKeyboard = NO;
+		self.disableOnKeyboard = NO;
 		self.touchPointMaze = NO;
 		self.shouldReverseDirection = NO;
 	}
@@ -113,8 +113,8 @@
 %new - (SBSystemGestureType)systemGestureType {
 	return [objc_getAssociatedObject(self, @selector(systemGestureType)) unsignedLongLongValue];
 }
-%new - (BOOL)ignoreKeyboard {
-	return [objc_getAssociatedObject(self, @selector(ignoreKeyboard)) boolValue];
+%new - (BOOL)disableOnKeyboard {
+	return [objc_getAssociatedObject(self, @selector(disableOnKeyboard)) boolValue];
 }
 %new - (BOOL)touchPointMaze {
 	return [objc_getAssociatedObject(self, @selector(touchPointMaze)) boolValue];
@@ -168,8 +168,8 @@
 %new - (void)setSystemGestureType:(SBSystemGestureType)value {
 	objc_setAssociatedObject(self, @selector(systemGestureType), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
-%new - (void)setIgnoreKeyboard:(BOOL)value {
-	objc_setAssociatedObject(self, @selector(ignoreKeyboard), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+%new - (void)setDisableOnKeyboard:(BOOL)value {
+	objc_setAssociatedObject(self, @selector(disableOnKeyboard), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 %new - (void)setTouchPointMaze:(BOOL)value {
 	objc_setAssociatedObject(self, @selector(touchPointMaze), @(value), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -272,7 +272,7 @@
 	CGSize screenSize = [UIScreen mainScreen].bounds.size;
 	CGPoint location = [self _locationForTouch:touch];
 	
-	if (self.ignoreKeyboard && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
+	if (self.disableOnKeyboard && [[%c(UIPeripheralHost) activeInstance] isOnScreen]) {
 		CGRect frame = [%c(UIPeripheralHost) visiblePeripheralFrame];
 		if (CGRectContainsPoint(frame, location)) {
 			self.state = UIGestureRecognizerStateFailed;
