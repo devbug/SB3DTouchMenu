@@ -382,8 +382,16 @@
 			}
 			
 			self.panning = YES;
+			
+			[self performSelector:@selector(tooMuchLongPressElapsed:) withObject:self afterDelay:self.minimumPressDurationForLongPress * 2];
 		}
 	}
+}
+
+%new
+- (void)tooMuchLongPressElapsed:(id)unused {
+	if (self.state != UIGestureRecognizerStateChanged && self.state != UIGestureRecognizerStateRecognized)
+		self.state = UIGestureRecognizerStateFailed;
 }
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {

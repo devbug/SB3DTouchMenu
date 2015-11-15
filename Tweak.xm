@@ -328,8 +328,13 @@ SB3DTMSwitcherForceLongPressPanGestureRecognizer *gg = nil;
 	if (SCREENEDGE_ENABLED && !gesture.isFirstFace)
 		return;
 	
-	if (gesture.state == UIGestureRecognizerStateBegan) {
+	if (gesture.state == UIGestureRecognizerStatePossible /*&& ![gesture _isNoRequriedLongPress]*/)
 		hapticFeedback();
+	
+	if (gesture.state == UIGestureRecognizerStateBegan) {
+		if ([gesture _isNoRequriedLongPress])
+			hapticFeedback();
+		
 		[self _forcePressGestureBeganWithGesture:gesture];
 	}
 	

@@ -121,7 +121,7 @@
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
 			<key>validTitles</key>
 			<array>
-				<string>Enable with long press</string>
+				<string>Enable with long press + peek</string>
 				<string>Enable without long press</string>
 				<string>Disable</string>
 			</array>
@@ -155,7 +155,7 @@
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
 			<key>validTitles</key>
 			<array>
-				<string>Enable with long press</string>
+				<string>Enable with long press + peek</string>
 				<string>Enable without long press</string>
 				<string>Disable</string>
 			</array>
@@ -189,7 +189,7 @@
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
 			<key>validTitles</key>
 			<array>
-				<string>Enable with long press</string>
+				<string>Enable with long press + peek</string>
 				<string>Enable without long press</string>
 				<string>Disable</string>
 			</array>
@@ -223,7 +223,7 @@
 			<string>me.devbug.SB3DTouchMenu.prefnoti</string>
 			<key>validTitles</key>
 			<array>
-				<string>Enable with long press</string>
+				<string>Enable with long press + peek</string>
 				<string>Enable without long press</string>
 				<string>Disable</string>
 			</array>
